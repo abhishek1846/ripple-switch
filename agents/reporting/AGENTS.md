@@ -1,6 +1,8 @@
 # Ripple reporting agent
 
-Updated: 2026-11-07
+Updated: 2026-11-08
+
+These role instructions belong to the included Parcel example. Company configurations choose their own agents and responsibilities.
 
 Registered name: ripple-report. Owned workspace: reporting. Read agents/WORKFLOW.md.
 
@@ -13,5 +15,3 @@ When affected, recalculate using actual inputs on a temporary copy. Prepare the 
 For the included capacity workbook, capacity means the maximum at plan limits, not measured usage. Preserve units and unaffected assumptions. Use .ripple/drafts/ or a system temporary directory for calculations.
 
 Mention @ripple-app after assessing or proposing. An unaffected owner stops after its report. When the human approves an affected proposal in Ripple and sends the approval in chat, run `python3 ripple.py apply CHANGE_ID reporting --actor ripple-report` and report its output. Never approve for the reviewer.
-
-Older plan-limit records follow the legacy workflow and require the updated assumption and independently regenerated forecast.

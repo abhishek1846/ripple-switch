@@ -4,13 +4,14 @@ import json
 import sys
 from pathlib import Path
 
-from .core import AREAS, Ripple, RippleError
+from .core import Ripple, RippleError
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='Ripple: one change across application, documentation, and reporting.')
-    parser.add_argument('--root', type=Path, default=Path(__file__).resolve().parents[1])
+    parser = argparse.ArgumentParser(description='Ripple: reviewed changes across your configured workspaces.')
+    parser.add_argument('--root', type=Path, help='Project root. Defaults to the current directory.')
     commands = parser.add_subparsers(dest='command', required=True)
+    commands.add_parser('init', help='Initialize ripple.json configuration in workspace')
     commands.add_parser('status')
     switch_test = commands.add_parser('switch-test')
     switch_register = commands.add_parser('switch-register')
@@ -28,7 +29,7 @@ def main(argv=None):
     intake.add_argument('--message-id')
     assess = commands.add_parser('assess', help='Record actual workspace impact after inspection')
     assess.add_argument('change')
-    assess.add_argument('area', choices=list(AREAS))
+    assess.add_argument('area', help='Workspace area identifier')
     assess.add_argument('--outcome', choices=['affected', 'unaffected', 'blocked'], required=True)
     assess.add_argument('--reason', required=True)
     assess.add_argument('--actor')
@@ -39,7 +40,7 @@ def main(argv=None):
     for name in ['inspect', 'propose', 'apply']:
         command = commands.add_parser(name)
         command.add_argument('change')
-        command.add_argument('area', choices=list(AREAS))
+        command.add_argument('area', help='Workspace area identifier')
         command.add_argument('--actor')
         if name == 'inspect':
             command.add_argument('--room-url')
@@ -53,9 +54,12 @@ def main(argv=None):
     serve = commands.add_parser('serve')
     serve.add_argument('--port', type=int, default=8790)
     args = parser.parse_args(argv)
-    app = Ripple(args.root)
     try:
-        if args.command == 'status':
+        root = args.root or Path.cwd()
+        app = Ripple(root)
+        if args.command == 'init':
+            result = app.init_project()
+        elif args.command == 'status':
             result = app.status()
         elif args.command == 'switch-test':
             from .switch import Switch

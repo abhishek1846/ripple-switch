@@ -18,6 +18,7 @@ class GeneralTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         shutil.copytree(SOURCE / 'workspaces', self.root / 'workspaces', ignore=shutil.ignore_patterns('__pycache__'))
+        shutil.copyfile(SOURCE / 'ripple.json', self.root / 'ripple.json')
         self.app = Ripple(self.root)
         self.change = mutate(self.app, '/api/changes', {'request': 'Rename Parcel to Relay in current product references. Keep historical facts unchanged.'})
         self.cid = self.change['id']

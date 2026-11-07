@@ -18,6 +18,7 @@ class WorkflowTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         shutil.copytree(SOURCE / 'workspaces', self.root / 'workspaces', ignore=shutil.ignore_patterns('__pycache__', 'uploads'))
+        shutil.copyfile(SOURCE / 'ripple.json', self.root / 'ripple.json')
         self.app = Ripple(self.root)
         self.change = self.app.start('Increase Basic to 10. Keep Pro unchanged.', limit=10)
         self.cid = self.change['id']

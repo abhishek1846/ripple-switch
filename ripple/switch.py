@@ -143,17 +143,42 @@ class Switch:
         return self.public()
 
     def prompt(self, change, phase):
-        script = shlex.quote(str(self.app.root / 'ripple.py'))
+        script = shlex.quote(str(Path(__file__).resolve().parents[1] / 'ripple.py'))
+        script += ' --root ' + shlex.quote(str(self.app.root))
         cid = change['id']
+        coordinator = '@' + self.app.coordinator + ' ' if self.app.coordinator else ''
         if phase == 'approval':
-            if self.app.general(change):
-                actors = {'application': 'ripple-app', 'documentation': 'ripple-docs', 'reporting': 'ripple-report'}
-                tasks = '\n'.join(f'@{actors[area]} run python3 {script} apply {cid} {area} --actor {actors[area]}' for area in self.app.required(change))
-                return f'The local reviewer approved the exact checked bundle for {cid}. Only affected agents apply their assigned proposals:\n{tasks}\nReport actual results. Unaffected workspaces stay unchanged. The final application rechecks the recorded acceptance conditions.'
-            return f'@ripple-app @ripple-docs @ripple-report The local reviewer approved {cid} in Ripple. Each agent: run python3 {script} apply {cid} YOUR_AREA --actor YOUR_AGENT_NAME, using your assigned area. Report the actual result here. The final agent triggers checks against actual workspaces. Do not claim completion on a failed result.'
+            tasks = []
+            for area in self.app.required(change):
+                agents = self.app.workspace_agents(area)
+                mentions = ' '.join('@' + agent for agent in agents)
+                task = f'{mentions + ": " if mentions else ""}{area}: coordinate one application of python3 {script} apply {cid} {shlex.quote(area)}. Include your actual --actor label.'
+                tasks.append(task)
+            return f'The local reviewer approved the checked bundle for {cid}. Apply only the affected workspaces:\n' + '\n'.join(tasks) + '\nReport actual results. Unaffected workspaces stay unchanged. The final application rechecks the recorded acceptance conditions.'
+        assignments = []
+        for area, info in self.app.areas.items():
+            agents = self.app.workspace_agents(area)
+            assigned = ' '.join('@' + agent for agent in agents) or 'CLI participants; ask the human if responsibility is unclear'
+            assignments.append(f'{area} ({info["title"]}, {info["path"]}): {assigned}')
+        instructions = '\n'.join(f'@{agent}: read {info["instructions"]}' for agent, info in self.app.agents.items() if info['instructions'])
+        workflow = str(Path(__file__).resolve().parents[1] / 'agents/WORKFLOW.md')
         if self.app.general(change):
-            return f'@ripple-app Coordinate existing change {cid}: {change["request"]}\nRead the current agents/application/AGENTS.md and agents/WORKFLOW.md. Do not create another record. Ask @ripple-docs and @ripple-report to inspect and assess their actual workspace for {cid}; assess application yourself. Each workspace records affected, unaffected, or blocked with its reason. Only affected owners propose edits and request-specific acceptance checks. Ask the human about ambiguity. Run python3 {script} check {cid} when all assessments and affected proposals are ready. Return the review link. Wait for human approval before application.'
-        return f'@ripple-app @ripple-docs @ripple-report Change {cid}: {change["request"]}\nStructured target: {change["target"]["plan"]} = {change["target"]["limit"]} files per project. Read your role under agents/ and agents/WORKFLOW.md in the Ripple checkout. Inspect your actual workspace, propose edits through the CLI, and post your findings here. Do not edit live workspace files directly. Preserve unaffected plans, source account inputs, and historical facts. After all proposals exist, @ripple-app run python3 {script} check {cid}. Wait for human approval before applying.'
+            return (
+                f'{coordinator}Coordinate existing change {cid}: {change["request"]}\n'
+                f'Read ripple.json and {workflow}. Do not create another record.\n'
+                + '\n'.join(assignments) + ('\n' + instructions if instructions else '')
+                + f'\nEvery workspace records affected, unaffected, or blocked with its reason after inspecting actual files. '
+                f'Agents sharing a workspace coordinate one current proposal. Only affected workspaces need edits and request-specific acceptance checks. '
+                f'Ask the human about ambiguity. Run python3 {script} check {cid} when assessments and affected proposals are ready. '
+                f'Return the review link. Wait for human approval before application.'
+            )
+        return (
+            f'{coordinator}Change {cid}: {change["request"]}\n'
+            f'Structured example target: {change["target"]["plan"]} = {change["target"]["limit"]} files per project.\n'
+            + '\n'.join(assignments)
+            + f'\nInspect the actual workspaces and propose edits through the CLI. Preserve unaffected plans, source accounts, and historical facts. '
+            f'Run python3 {script} check {cid} after proposals are ready. Wait for human approval before applying.'
+        )
 
     def dispatch(self, change_id, phase='request'):
         if phase not in ('request', 'approval'):

@@ -1,12 +1,15 @@
 import copy
 import csv
+import difflib
 import fcntl
+import fnmatch
 import hashlib
 import io
 import json
 import os
 import re
 import secrets
+import stat
 import tempfile
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -22,7 +25,9 @@ AREAS = {
     'reporting': {'title': 'Reporting', 'description': 'Operational assumptions and generated reports', 'editable': ['limits.csv', 'forecast.py', 'forecast.csv']},
 }
 
-TEXT_SUFFIXES = {'.json', '.py', '.md', '.csv', '.txt', '.html', '.css', '.js', '.yaml', '.yml'}
+PROTECTED = {'application': [], 'documentation': ['archive/**'], 'reporting': ['accounts.csv']}
+
+TEXT_SUFFIXES = {'.json', '.py', '.md', '.csv', '.txt', '.html', '.css', '.js', '.yaml', '.yml', '.ts', '.tsx', '.jsx', '.mjs', '.cjs', '.toml', '.sql', '.sh'}
 TERMINAL = ('no_changes', 'complete', 'cancelled')
 
 
@@ -43,12 +48,120 @@ def now():
 
 
 class Ripple:
-    def __init__(self, root):
+    def __init__(self, root, config_path=None):
         self.root = Path(root).resolve()
         self.workspaces = self.root / 'workspaces'
         self.runtime = self.root / '.ripple'
         self.runtime.mkdir(exist_ok=True)
         self.state_path = self.runtime / 'state.json'
+        self.pending_path = self.runtime / 'pending-apply.json'
+        self.config_path = Path(config_path).resolve() if config_path else self.root / 'ripple.json'
+        self._load_config()
+
+    def _load_config(self):
+        self.name = self.root.name
+        self.agents = {}
+        self.coordinator = None
+        self.example = None
+        # Older checkouts had no configuration file. Keep their example
+        # workflow readable; explicit configurations have no fixed roles.
+        self.areas = {
+            area: dict(copy.deepcopy(info), path=f'workspaces/{area}', protected=list(PROTECTED[area]))
+            for area, info in AREAS.items()
+        }
+        if not self.config_path.exists():
+            if all((self.root / 'workspaces' / area).is_dir() for area in AREAS):
+                self.example = 'parcel'
+            else:
+                self.areas = {'project': {'title': 'Project', 'description': 'Project files', 'path': '.', 'protected': [], 'editable': []}}
+            return
+        try:
+            data = json.loads(self.config_path.read_text())
+        except (ValueError, OSError) as exc:
+            raise RippleError(f'Cannot read {self.config_path}: {exc}') from exc
+        workspaces = data.get('workspaces') if isinstance(data, dict) else None
+        if not isinstance(workspaces, dict) or not workspaces:
+            raise RippleError('ripple.json needs a nonempty workspaces object')
+        self.name = data.get('name', self.root.name)
+        if not isinstance(self.name, str) or not self.name.strip():
+            raise RippleError('Project name must be nonempty text')
+        self.example = data.get('example')
+        self.areas = {}
+        for area, info in workspaces.items():
+            self._identifier(area, 'workspace')
+            if not isinstance(info, dict):
+                raise RippleError(f'Workspace {area} must be an object')
+            # Legacy editable lists belong to the supplied example only.
+            legacy = AREAS.get(area, {})
+            defaults = {'title': area, 'description': '', 'path': f'workspaces/{area}', 'protected': [], 'editable': legacy.get('editable', [])}
+            configured = dict(defaults, **info)
+            for field in ('title', 'description', 'path'):
+                if not isinstance(configured[field], str) or (field != 'description' and not configured[field].strip()):
+                    raise RippleError(f'{area}.{field} must be text')
+            for field in ('protected', 'editable'):
+                if not isinstance(configured[field], list) or not all(isinstance(v, str) and v for v in configured[field]):
+                    raise RippleError(f'{area}.{field} must be a list of nonempty strings')
+            if self.example == 'parcel':
+                configured['protected'] = list(dict.fromkeys(PROTECTED.get(area, []) + configured['protected']))
+            self.areas[area] = configured
+        directories = [self.area_path(area) for area in self.areas]
+        for index, directory in enumerate(directories):
+            for other in directories[index + 1:]:
+                if directory.is_relative_to(other) or other.is_relative_to(directory):
+                    raise RippleError('Workspace paths must be separate directories without overlap')
+        agents = data.get('agents', {})
+        if not isinstance(agents, dict):
+            raise RippleError('agents must be an object keyed by your agent names')
+        for agent, info in agents.items():
+            self._identifier(agent, 'agent')
+            if not isinstance(info, dict):
+                raise RippleError(f'Agent {agent} must be an object')
+            assigned = info.get('workspaces', [])
+            if not isinstance(assigned, list) or not all(isinstance(area, str) and area in self.areas for area in assigned):
+                raise RippleError(f'{agent}.workspaces must list configured workspace names')
+            title, instructions = info.get('title', agent), info.get('instructions', '')
+            if not isinstance(title, str) or not title.strip() or not isinstance(instructions, str):
+                raise RippleError(f'{agent} needs a text title and instructions path')
+            if instructions:
+                rel = PurePosixPath(instructions)
+                if rel.is_absolute() or '..' in rel.parts or chr(92) in instructions:
+                    raise RippleError(f'{agent}.instructions must be a path inside the project')
+            self.agents[agent] = {'title': title, 'workspaces': list(dict.fromkeys(assigned)), 'instructions': instructions}
+        self.coordinator = data.get('coordinator')
+        if self.coordinator is not None and (not isinstance(self.coordinator, str) or self.coordinator not in self.agents):
+            raise RippleError('coordinator must name a configured agent, or be omitted')
+
+    @staticmethod
+    def _identifier(value, kind):
+        if not isinstance(value, str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9_.-]*', value):
+            raise RippleError(f'Use a {kind} identifier containing letters, numbers, dots, underscores, or hyphens')
+
+    def workspace_agents(self, area):
+        return [agent for agent, info in self.agents.items() if area in info['workspaces']]
+
+    def area_path(self, area):
+        """Resolve every read and write through the same validated configuration."""
+        rel = PurePosixPath(self.areas[area]['path'])
+        if rel.is_absolute() or any(p.startswith('.') for p in rel.parts) or chr(92) in str(rel):
+            raise RippleError(f'{area}.path must be a relative directory inside the project')
+        directory = self.root / rel
+        if not directory.resolve().is_relative_to(self.root) or any(p.is_symlink() for p in (directory, *directory.parents)):
+            raise RippleError(f'{area}.path must stay inside the project without symlinks')
+        return directory
+
+    def init_project(self):
+        created = []
+        if not self.config_path.exists():
+            starter = {
+                'name': self.root.name,
+                'workspaces': {'project': {'path': '.', 'title': 'Project', 'description': 'Project files', 'protected': []}},
+                'agents': {},
+            }
+            self.config_path.write_text(json.dumps(starter, indent=2) + '\n')
+            created.append(str(self.config_path))
+            self._load_config()
+        self.runtime.mkdir(exist_ok=True)
+        return {'initialized': str(self.root), 'created': created, 'areas': list(self.areas)}
 
     def _atomic(self, path, text):
         path = Path(path)
@@ -57,42 +170,100 @@ class Ripple:
         path.parent.mkdir(parents=True, exist_ok=True)
         fd, temp = tempfile.mkstemp(dir=path.parent, prefix='.ripple-write-')
         try:
+            if path.exists():
+                os.fchmod(fd, stat.S_IMODE(path.stat().st_mode))
             with os.fdopen(fd, 'w') as f:
                 f.write(text)
                 f.flush()
                 os.fsync(f.fileno())
             os.replace(temp, path)
+            self._sync_directory(path.parent)
         finally:
             if os.path.exists(temp):
                 os.unlink(temp)
+
+    @staticmethod
+    def _sync_directory(directory):
+        fd = os.open(directory, os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+
+    def _read_state(self):
+        return json.loads(self.state_path.read_text()) if self.state_path.exists() else {'changes': [], 'events': []}
+
+    def _recover_apply(self, state):
+        """Replay an interrupted area's rollback before accepting another operation."""
+        if not self.pending_path.exists():
+            return
+        pending = json.loads(self.pending_path.read_text())
+        change = self._change(state, pending['change'])
+        area = pending['area']
+        if area not in change['applied']:
+            if str(self.area_path(area)) != pending['directory']:
+                raise RippleError('Restore the workspace path in ripple.json before recovering its interrupted application')
+            # Check every destination before rolling anything back. Preserve
+            # unexpected outside edits for a person to reconcile.
+            for item in pending['files']:
+                dest = self.area_path(area) / item['path']
+                if not self._editable_path(area, item['path']):
+                    raise RippleError('Restore the workspace path protections before recovering its interrupted application')
+                actual = dest.read_text() if dest.exists() else None
+                before = None if item.get('new_file') else item['before']
+                if actual not in (before, item['content']):
+                    raise RippleError(f'Interrupted application conflicts with {area}/{item["path"]}. Preserve the outside edit and reconcile it before retrying.')
+            for item in reversed(pending['files']):
+                dest = self.area_path(area) / item['path']
+                if item.get('new_file'):
+                    if dest.exists():
+                        dest.unlink()
+                        self._sync_directory(dest.parent)
+                elif dest.read_text() != item['before']:
+                    self._atomic(dest, item['before'])
+        self.pending_path.unlink()
+        self._sync_directory(self.runtime)
 
     @contextmanager
     def state(self):
         with (self.runtime / 'lock').open('a') as lock:
             fcntl.flock(lock, fcntl.LOCK_EX)
-            state = json.loads(self.state_path.read_text()) if self.state_path.exists() else {'changes': [], 'events': []}
+            state = self._read_state()
+            self._recover_apply(state)
             try:
                 yield state
-            except Exception:
+                self._atomic(self.state_path, json.dumps(state, indent=2))
+            except BaseException:
+                self._recover_apply(self._read_state())
                 raise
             else:
-                self._atomic(self.state_path, json.dumps(state, indent=2))
+                self._recover_apply(state)
 
     def event(self, state, kind, change, actor, message, **extra):
         state['events'].append({'id': secrets.token_hex(5), 'time': now(), 'kind': kind, 'change': change, 'actor': actor, 'message': message, **extra})
 
     def snapshot(self):
         result = {}
-        for area in AREAS:
-            for path in sorted((self.workspaces / area).rglob('*')):
-                if not path.is_file() or '__pycache__' in path.parts or any(p.startswith('.') for p in path.relative_to(self.workspaces).parts) or path.suffix not in TEXT_SUFFIXES:
-                    continue
-                if path.is_symlink() or not path.resolve().is_relative_to(self.workspaces.resolve()):
+        for area in self.areas:
+            area_dir = self.area_path(area)
+            if not area_dir.is_dir():
+                raise RippleError(f'Workspace {area} is missing: {area_dir}. Update ripple.json or create the directory.')
+            def scan_error(error):
+                raise RippleError(f'Cannot inspect workspace {area}: {error}') from error
+            for parent, directories, filenames in os.walk(area_dir, onerror=scan_error):
+                directories[:] = sorted(name for name in directories if not name.startswith('.') and name not in ('__pycache__', 'node_modules', 'dist', 'build'))
+                if any((Path(parent) / name).is_symlink() for name in directories):
                     raise RippleError('Workspace contains a symlink outside its boundary')
-                if path.stat().st_size > 512000:
-                    raise RippleError('Workspace text file exceeds 500 KB')
-                content = path.read_text()
-                result[path.relative_to(self.workspaces).as_posix()] = {'content': content, 'sha256': sha(content)}
+                for name in sorted(filenames):
+                    path = Path(parent) / name
+                    if name.startswith('.') or path.resolve() == self.config_path.resolve() or path.suffix not in TEXT_SUFFIXES:
+                        continue
+                    if path.is_symlink() or not path.resolve().is_relative_to(area_dir.resolve()):
+                        raise RippleError('Workspace contains a symlink outside its boundary')
+                    if path.stat().st_size > 512000:
+                        raise RippleError('Workspace text file exceeds 500 KB')
+                    content = path.read_text()
+                    result[area + '/' + path.relative_to(area_dir).as_posix()] = {'content': content, 'sha256': sha(content)}
         return result
 
     def _change(self, state, change_id):
@@ -114,16 +285,17 @@ class Ripple:
         return change.get('kind') == 'general'
 
     def required(self, change):
-        return [a for a in AREAS if change.get('assessments', {}).get(a, {}).get('outcome') == 'affected'] if self.general(change) else list(AREAS)
+        areas = change.get('workspace_config', self.areas)
+        return [a for a in areas if change.get('assessments', {}).get(a, {}).get('outcome') == 'affected'] if self.general(change) else list(areas)
 
     def _readiness(self, change):
         if not self.general(change):
-            change['status'] = 'ready_to_check' if set(change['proposals']) == set(AREAS) else 'discovering'
+            change['status'] = 'ready_to_check' if set(change['proposals']) == set(self.areas) else 'discovering'
             return
         assessments = change.get('assessments', {})
         if any(a['outcome'] == 'blocked' for a in assessments.values()):
             change['status'] = 'needs_clarification'
-        elif set(assessments) == set(AREAS):
+        elif set(assessments) == set(self.areas):
             required = self.required(change)
             change['status'] = 'no_changes' if not required else 'ready_to_check' if set(change['proposals']) == set(required) else 'discovering'
         else:
@@ -135,10 +307,15 @@ class Ripple:
         rel = PurePosixPath(path)
         if rel.is_absolute() or '..' in rel.parts or any(p.startswith('.') for p in rel.parts) or rel.as_posix() != path or rel.suffix not in TEXT_SUFFIXES:
             return False
-        if (area == 'documentation' and rel.parts[0] == 'archive') or (area == 'reporting' and path == 'accounts.csv'):
-            return False
-        base = self.workspaces / area
+        area_conf = self.areas.get(area, {})
+        protected = area_conf.get('protected', [])
+        for pat in protected:
+            if fnmatch.fnmatch(path, pat) or fnmatch.fnmatch(rel.name, pat):
+                return False
+        base = self.area_path(area)
         dest = base / path
+        if dest.resolve() == self.config_path.resolve():
+            return False
         return dest.resolve().is_relative_to(base.resolve()) and not any(p.is_symlink() for p in (dest, *dest.parents))
 
     def _save_draft(self, state, change):
@@ -196,6 +373,8 @@ class Ripple:
                         raise RippleError('This chat message already has a request with a different target')
                     return self.public_change(existing)
             baseline = self.snapshot()
+            if not general and not all(key in baseline for key in ('application/plans.json', 'documentation/plans.md', 'reporting/forecast.csv')):
+                raise RippleError('Structured plan-limit requests belong to the included example. Use a free-text request for this project.')
             before = None if general else json.loads(baseline['application/plans.json']['content'])[plan]['files_per_project']
             if not general and before == limit:
                 raise RippleError('The application already has that limit')
@@ -204,13 +383,13 @@ class Ripple:
                     if self._parkable(existing):
                         self._save_draft(state, existing)
             queued = draft or self._active(state) is not None
-            change = {'id': 'R-' + secrets.token_hex(3).upper(), 'request': request.strip(), 'kind': 'general' if general else 'plan_limit', 'target': target, 'before': before, 'created': now(), 'origin': origin, 'source_message_id': source_message_id, 'status': 'draft' if queued else 'discovering', 'baseline': baseline, 'proposals': {}, 'inspections': {}, 'assessments': {}, 'clarifications': [], 'applied': {}, 'check': None, 'approval': None}
+            change = {'id': 'R-' + secrets.token_hex(3).upper(), 'request': request.strip(), 'kind': 'general' if general else 'plan_limit', 'target': target, 'before': before, 'created': now(), 'origin': origin, 'source_message_id': source_message_id, 'status': 'draft' if queued else 'discovering', 'baseline': baseline, 'workspace_config': copy.deepcopy(self.areas), 'proposals': {}, 'inspections': {}, 'assessments': {}, 'clarifications': [], 'applied': {}, 'check': None, 'approval': None}
             state['changes'].append(change)
             self.event(state, 'draft_created' if queued else 'requested', change['id'], 'Mattermost request' if origin == 'mattermost' else 'reviewer', request.strip(), origin=origin, source_message_id=source_message_id)
             return self.public_change(change)
 
     def inspect(self, change_id, area, actor=None, room_url=None):
-        if area not in AREAS:
+        if area not in self.areas:
             raise RippleError('Unknown area')
         if room_url and (not isinstance(room_url, str) or not room_url.startswith(('http://', 'https://')) or len(room_url) > 2000):
             raise RippleError('Use an http or https chat reference')
@@ -222,11 +401,11 @@ class Ripple:
             inspection = {'time': now(), 'actor': actor or 'local CLI', 'files': {k: v['sha256'] for k, v in files.items()}, 'room_url': room_url}
             change['inspections'][area] = inspection
             self.event(state, 'inspected', change_id, actor or 'local CLI', f'Inspected {len(files)} files in {area}.', area=area, room_url=room_url)
-            editable = [k.split('/', 1)[1] for k in files if self._editable_path(area, k.split('/', 1)[1])] if self.general(change) else AREAS[area]['editable']
-            return {'change': self.public_change(change), 'area': area, 'editable': editable, 'new_text_files_allowed': self.general(change), 'files': files, 'instruction': 'Read the request and actual files. General requests need an affected, unaffected, or blocked assessment before proposing. Patches contain files, findings, and declarative checks. New files use null before_sha256. Archive history and reporting/accounts.csv are protected.'}
+            editable = [k.split('/', 1)[1] for k in files if self._editable_path(area, k.split('/', 1)[1])] if self.general(change) else self.areas[area].get('editable', [])
+            return {'change': self.public_change(change), 'area': area, 'editable': editable, 'new_text_files_allowed': self.general(change), 'files': files, 'instruction': 'Read the request and actual files. General requests need an affected, unaffected, or blocked assessment before proposing. Patches contain files, findings, and declarative checks. New files use null before_sha256. Follow the workspace protected patterns in ripple.json.'}
 
     def assess(self, change_id, area, outcome, reason, actor=None):
-        if area not in AREAS or outcome not in ('affected', 'unaffected', 'blocked') or not isinstance(reason, str) or not reason.strip() or len(reason) > 4000:
+        if area not in self.areas or outcome not in ('affected', 'unaffected', 'blocked') or not isinstance(reason, str) or not reason.strip() or len(reason) > 4000:
             raise RippleError('Assessment needs an area, affected/unaffected/blocked outcome, and a reason')
         with self.state() as state:
             change = self._change(state, change_id)
@@ -256,7 +435,7 @@ class Ripple:
             return self.public_change(change)
 
     def propose(self, change_id, area, patch, summary, actor=None):
-        if area not in AREAS or not isinstance(patch, dict):
+        if area not in self.areas or not isinstance(patch, dict):
             raise RippleError('Invalid area or patch')
         files = patch.get('files')
         if not isinstance(files, list) or not files or len(files) > 20:
@@ -281,7 +460,7 @@ class Ripple:
                 if not isinstance(item, dict):
                     raise RippleError('Invalid file entry')
                 path = item.get('path')
-                if (not self._editable_path(area, path) if general else path not in AREAS[area]['editable']) or path in seen:
+                if not self._editable_path(area, path) or (not general and path not in self.areas[area]['editable']) or path in seen:
                     raise RippleError('File is outside the editable area or appears twice')
                 seen.add(path)
                 key = area + '/' + path
@@ -325,7 +504,10 @@ class Ripple:
 
     def _bundle(self, change):
         if self.general(change):
-            return digest({k: change[k] for k in ('request', 'clarifications', 'assessments', 'proposals')})
+            bundle = {k: change[k] for k in ('request', 'clarifications', 'assessments', 'proposals')}
+            if 'workspace_config' in change:
+                bundle['workspace_config'] = change['workspace_config']
+            return digest(bundle)
         return digest({'target': change['target'], 'proposals': change['proposals']})
 
     def _expected(self, change):
@@ -336,33 +518,37 @@ class Ripple:
         return expected
 
     def _fresh(self, change):
+        if 'workspace_config' in change and change['workspace_config'] != self.areas:
+            raise RippleError('Workspace configuration changed during this request. Restore its reviewed configuration before continuing.')
         current, expected = self.snapshot(), self._expected(change)
         if {k: v['sha256'] for k, v in current.items()} != {k: v['sha256'] for k, v in expected.items()}:
             raise RippleError('A workspace changed outside this approved change. Reconcile it before continuing.')
+
+    def _verify_snapshot(self, snapshot, change):
+        with tempfile.TemporaryDirectory(prefix='ripple-check-') as temp:
+            directory = Path(temp)
+            for key, value in snapshot.items():
+                path = directory / key
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(value['content'])
+            return verify_general(directory, change) if self.general(change) else verify(directory, change)
 
     def check(self, change_id):
         with self.state() as state:
             change = self._change(state, change_id)
             required = self.required(change)
-            if self.general(change) and (set(change['assessments']) != set(AREAS) or any(a['outcome'] == 'blocked' for a in change['assessments'].values())):
+            if self.general(change) and (set(change['assessments']) != set(self.areas) or any(a['outcome'] == 'blocked' for a in change['assessments'].values())):
                 raise RippleError('Every workspace must report its impact and all open questions must be resolved')
             if not required or set(change['proposals']) != set(required):
                 raise RippleError('Every affected workspace must submit a proposal before the combined check')
             if change['status'] in ('draft', 'cancelled'):
                 raise RippleError('Resume this request before checking its proposals')
             self._fresh(change)
-            with tempfile.TemporaryDirectory(prefix='ripple-check-') as temp:
-                candidate = Path(temp)
-                for key, value in change['baseline'].items():
-                    path = candidate / key
-                    path.parent.mkdir(parents=True, exist_ok=True)
-                    path.write_text(value['content'])
-                for area, proposal in change['proposals'].items():
-                    for item in proposal['files']:
-                        dest = candidate / area / item['path']
-                        dest.parent.mkdir(parents=True, exist_ok=True)
-                        dest.write_text(item['content'])
-                result = verify_general(candidate, change) if self.general(change) else verify(candidate, change)
+            candidate = copy.deepcopy(change['baseline'])
+            for area, proposal in change['proposals'].items():
+                for item in proposal['files']:
+                    candidate[area + '/' + item['path']] = {'content': item['content'], 'sha256': item['after_sha256']}
+            result = self._verify_snapshot(candidate, change)
             result.update({'time': now(), 'bundle': self._bundle(change), 'mode': 'actual' if set(change['applied']) == set(required) else 'proposed'})
             change['check'] = result
             if not change['applied']:
@@ -384,7 +570,7 @@ class Ripple:
             return self.public_change(change)
 
     def apply(self, change_id, area, actor=None):
-        if area not in AREAS:
+        if area not in self.areas:
             raise RippleError('Unknown area')
         with self.state() as state:
             change = self._change(state, change_id)
@@ -397,28 +583,20 @@ class Ripple:
             if area in change['applied']:
                 return self.public_change(change)
             proposal = change['proposals'][area]
-            # Each file is atomic; the overall cross-workspace update is not a
-            # distributed transaction. Record a partial state if any write fails.
-            written = []
-            try:
-                for item in proposal['files']:
-                    if self.general(change) and not self._editable_path(area, item['path']):
-                        raise RippleError('An application path is no longer within the editable workspace')
-                    self._atomic(self.workspaces / area / item['path'], item['content'])
-                    written.append(item)
-            except Exception:
-                for item in reversed(written):
-                    if item.get('new_file'):
-                        (self.workspaces / area / item['path']).unlink()
-                    else:
-                        self._atomic(self.workspaces / area / item['path'], item['before'])
-                raise
+            # Persist rollback data before touching live files. state() clears
+            # the journal only after the matching workflow record is durable.
+            pending = {'change': change_id, 'area': area, 'directory': str(self.area_path(area)), 'files': proposal['files']}
+            self._atomic(self.pending_path, json.dumps(pending))
+            for item in proposal['files']:
+                if not self._editable_path(area, item['path']):
+                    raise RippleError('An application path is no longer within the editable workspace')
+                self._atomic(self.area_path(area) / item['path'], item['content'])
             change['applied'][area] = {'time': now(), 'actor': actor or 'local CLI', 'files': [f['path'] for f in proposal['files']]}
             required = self.required(change)
             change['status'] = 'verifying' if set(change['applied']) == set(required) else 'applying'
             self.event(state, 'applied', change_id, actor or 'local CLI', f'Applied {len(proposal["files"])} real file updates in {area}.', area=area)
             if set(change['applied']) == set(required):
-                result = verify_general(self.workspaces, change) if self.general(change) else verify(self.workspaces, change)
+                result = self._verify_snapshot(self.snapshot(), change)
                 result.update({'time': now(), 'mode': 'actual', 'bundle': self._bundle(change)})
                 change['check'] = result
                 change['status'] = 'complete' if result['passed'] else 'verification_failed'
@@ -439,6 +617,19 @@ class Ripple:
         from .switch import Switch
         result = copy.deepcopy(change)
         result.pop('baseline', None)
+        for area, proposal in result['proposals'].items():
+            for item in proposal['files']:
+                path = area + '/' + item['path']
+                lines = difflib.unified_diff(
+                    item['before'].splitlines(keepends=True),
+                    item['content'].splitlines(keepends=True),
+                    fromfile='/dev/null' if item.get('new_file') else 'a/' + path,
+                    tofile='b/' + path,
+                )
+                item['diff'] = ''.join(
+                    line if line.endswith('\n') else line + '\n\\ No newline at end of file\n'
+                    for line in lines
+                )
         result['can_save_as_draft'] = self._parkable(change)
         result['required_areas'] = self.required(change)
         bridge = Switch(self)
@@ -450,7 +641,7 @@ class Ripple:
     def status(self):
         from .switch import Switch
         with self.state() as state:
-            return {'api_version': 4, 'workspace_root': str(self.root), 'switch': Switch(self).public(), 'areas': AREAS, 'changes': [self.public_change(c) for c in state['changes']], 'events': state['events'], 'systems': self.systems(), 'transport': 'Switch HTTP receipts record real sends. Agent tool receipts describe workspace operations. The actual chat recording proves the complete human-agent interaction.'}
+            return {'api_version': 5, 'name': self.name, 'agents': self.agents, 'coordinator': self.coordinator, 'example': self.example, 'workspace_root': str(self.root), 'switch': Switch(self).public(), 'areas': self.areas, 'changes': [self.public_change(c) for c in state['changes']], 'events': state['events'], 'systems': self.systems(), 'transport': 'Switch HTTP receipts record real sends. Agent tool receipts describe workspace operations. The actual chat recording proves the complete human-agent interaction.'}
 
     def systems(self):
         snapshot = self.snapshot()
@@ -461,4 +652,4 @@ class Ripple:
         except (KeyError, ValueError):
             plans = {}
         report = snapshot.get('reporting/forecast.csv', {}).get('content', '')
-        return {'application': plans, 'documentation': {k.split('/', 1)[1]: v['content'] for k, v in snapshot.items() if k.startswith('documentation/')}, 'reporting': list(csv.DictReader(io.StringIO(report))), 'files': {k: v['content'] for k, v in snapshot.items()}}
+        return {'workspaces': {area: {'title': info['title'], 'path': info['path']} for area, info in self.areas.items()}, 'application': plans, 'documentation': {k.split('/', 1)[1]: v['content'] for k, v in snapshot.items() if k.startswith('documentation/')}, 'reporting': list(csv.DictReader(io.StringIO(report))), 'files': {k: v['content'] for k, v in snapshot.items()}}

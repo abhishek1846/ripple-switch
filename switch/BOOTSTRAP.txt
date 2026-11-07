@@ -1,11 +1,13 @@
-Help me set up Ripple for the Flip the Switch hackathon. Work from /Users/abhisheksingh/Projects/ripple.
+This prompt sets up the included Parcel example. Its three-agent roster is not a product limit. For a company configuration, use the agents, workspace assignments, coordinator, and role instructions from ripple.json.
 
-First verify this folder exists and read switch/SETUP.md, switch/ROOM.md, and switch/ripple.template.yaml. I need a real messaging-app room, not just a private Console assistant conversation.
+Help me set up Ripple in Switch Console. Work from the absolute path to this Ripple repository checkout.
 
-Use the version-1 template if my installed Console supports it. The directory param is /Users/abhisheksingh/Projects/ripple, provider Codex, location this computer. Use a connected chat app. If none is connected, guide me through connecting one; do not claim an empty bridge is ready.
+First verify this folder exists and read switch/SETUP.md, switch/ROOM.md, and switch/ripple.template.yaml. Use a real messaging room connected via Switch.
 
-Create or reuse exactly these agents: ripple-app, ripple-docs, ripple-report. All run from the project root with their distinct instructions in agents/application/AGENTS.md, agents/documentation/AGENTS.md, and agents/reporting/AGENTS.md. Keep normal provider permissions enabled. Use the room instructions from switch/ROOM.md. Agents owned by me should accept messages from me and my other agents.
+Use the template switch/ripple.template.yaml. Set the directory parameter to the absolute checkout root, choose your configured provider (e.g. Codex), location this computer, and your connected chat bridge.
 
-Start real sessions and put all three agents and me in one connected chat room. First smoke test: ask each agent to run python3 ripple.py status and report the actual checkout root and available workspaces. Stop and explain any unavailable provider, missing working directory, or disconnected bridge. Do not simulate success or fill in a fabricated conversation.
+Create or reuse these agents: ripple-app, ripple-docs, ripple-report. All run from the project root with their instructions in agents/application/AGENTS.md, agents/documentation/AGENTS.md, and agents/reporting/AGENTS.md. Keep normal provider permissions enabled. Use the room instructions from switch/ROOM.md.
 
-Set the room alias @ripple for ripple-app. New requests are free text: the coordinator registers one ID, every owner assesses impact, and only affected owners propose edits and acceptance checks. Read the current role files at each request. Preserve any existing active request and its approval state.
+Start sessions and place all three agents in one connected chat room. Verify readiness by asking each agent to run python3 ripple.py status and confirm its assigned role and working directory.
+
+Set the room alias @ripple for ripple-app. Change requests start as free text: the coordinator registers a request ID, each workspace owner assesses impact, and affected owners propose file edits and declarative acceptance checks.

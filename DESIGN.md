@@ -1,6 +1,8 @@
 # Ripple interface
 
-The main task is following a decision across working systems. The interface uses a compact change ledger and a map of the actual route through Switch. The original oversized introduction and rounded dashboard cards were replaced by a working review surface.
+Updated: 2026-11-08
+
+The main task is following a decision across working systems. The interface uses a compact change ledger and a map of the actual route through Switch. The reviewer can follow impact assessments, inspect proposed edits, and approve a checked bundle.
 
 ## Research
 
@@ -21,9 +23,9 @@ The map is functional: selecting an agent opens its proposed files. Selecting Sw
 - Creating a change saves it. The next-step panel states whether Switch still needs connection or the request is ready to send.
 - Send to Switch records a real transport receipt. Waiting for agents is a distinct state.
 - Manual handoff shows the full message, supports copy, and provides selected text if clipboard access is denied.
-- File review shows actual before and after content. Approval applies to the checked bundle.
+- File review highlights a unified diff and offers complete before and after content. Approval applies to the checked bundle.
 - History selection, filtering, workspace views, and receipt downloads operate on persisted records.
 - N creates a change. Number keys 1-4 switch views. Escape closes a dialog.
-- At narrow widths the ledger rail collapses into the header. The route and working views remain available.
+- At narrow widths the Changes button opens the ledger in the header. The route and working views remain available.
 
-Verification is recorded separately in VERIFICATION.md. A design reference is not evidence that the implemented interface was rendered successfully.
+The interface focuses on functional transparency: review exact before/after content, verify candidate acceptance checks, and track real agent operations.

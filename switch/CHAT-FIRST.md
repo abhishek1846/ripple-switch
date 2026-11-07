@@ -1,6 +1,8 @@
 # Start from Mattermost
 
-Updated: 2026-11-07
+Updated: 2026-11-08
+
+This guide configures the included Parcel example. Its three agents and their names are example choices. Use your own roster and workspace assignments from ripple.json for another project.
 
 The primary flow begins with a change written as text:
 
@@ -24,19 +26,19 @@ For a room created before that mapping was added, the room owner can run:
 !set-alias @ripple-app @ripple
 ```
 
-This tells Switch that `@ripple` should reach the existing coordinator. It is installation setup, outside the demo and ordinary change requests. The official [room command reference](https://github.com/sandbox-quantum/switch/blob/main/docs/official/resources/room-commands.md) documents the syntax. The current alias state in the installed room has not been inspected from this session.
+This tells Switch that `@ripple` should reach the existing coordinator. It is one-time installation setup. The official [room command reference](https://docs.switchagents.ai/switch-rooms/resources/room-commands) documents the syntax.
 
 ### Refresh existing agents through the coordinator
 
 Finish or resolve any active request before switching sessions to another checkout. Keep all agents and the dashboard on the same checkout root. For updated instructions, message only the coordinator:
 
 ```text
-@ripple Prepare for the demo. Read your current role file and agents/WORKFLOW.md. Ask the workspace owners to load their current instructions and confirm their checkout root and role. Report whether everyone is ready. Do not create a change yet.
+@ripple Check readiness for a new request. Read your current role file and agents/WORKFLOW.md. Ask the workspace owners to load their current instructions and confirm their checkout root and role. Report whether everyone is ready. Do not create a change yet.
 ```
 
-The coordinator runs its own status check and asks the workers to do theirs through Switch. A readiness message must not create a change record. Do not delete agents, rooms, or runtime data. The installed room still needs a successful native rehearsal of the updated workflow.
+The coordinator runs its own status check and asks the workers to do theirs through Switch. A readiness message must not create a change record. Do not delete agents, rooms, or runtime data. Confirm readiness from actual command results before creating a request.
 
-## Rehearse the workflow
+## Complete a request
 
 1. Send the rename request above. Show the coordinator's actual intake result and handoffs.
 2. Show the owners' findings. Application and documentation should inspect the current name. Reporting should inspect its numeric files and explain why it is unaffected if no name references are present.

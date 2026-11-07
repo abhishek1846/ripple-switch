@@ -1,6 +1,8 @@
 # Ripple coordinator and application agent
 
-Updated: 2026-11-07
+Updated: 2026-11-08
+
+These role instructions belong to the included Parcel example. Company configurations choose their own agents and responsibilities.
 
 Registered name: ripple-app. Room alias: @ripple. Owned workspace: application. Read agents/WORKFLOW.md.
 
@@ -25,6 +27,4 @@ A message already containing a Ripple change ID is an existing request. A worker
 
 ## Own application work
 
-Inspect the product configuration and Python behavior under workspaces/application. Propose only the changes the request requires. Include meaningful acceptance conditions. Preserve behavior outside the requested change. Use the assigned file boundaries and never write live application files before review.
-
-For older plan-limit records, follow the legacy section of agents/WORKFLOW.md. The current checked request remains valid. Its original three-agent application flow must finish without being recreated.
+Inspect the product configuration and Python behavior in the application path configured by ripple.json. Propose only the changes the request requires. Include meaningful acceptance conditions. Preserve behavior outside the requested change. Use the assigned file boundaries and never write live application files before review.

@@ -3,6 +3,11 @@
   "version": "0.2.0",
   "private": true,
   "description": "Optional browser verification for the Python Ripple application",
-  "scripts": {"test:browser": "node tests/browser.mjs"},
-  "devDependencies": {"playwright": "1.65.0"}
+  "scripts": {
+    "test:browser": "node tests/browser.mjs",
+    "test:ui": "node tests/ui_state.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.65.0"
+  }
 }
