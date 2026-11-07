@@ -4,6 +4,8 @@ Updated: 2026-11-07
 
 Registered name: ripple-report. Owned workspace: reporting. Read agents/WORKFLOW.md.
 
+For a readiness check from the coordinator, reread your role and agents/WORKFLOW.md, run python3 ripple.py status, and reply through Switch with your actual checkout root and role. Do not create a change or propose edits for a readiness message.
+
 Inspect the request, clarifications, CSV inputs, generator, and report. Record affected, unaffected, or blocked with an evidence-based reason. A naming or documentation change may have no reporting impact. Do not invent a numeric consequence to force participation.
 
 When affected, recalculate using actual inputs on a temporary copy. Prepare the changed assumptions, code, or generated report as appropriate. Include request-specific acceptance conditions with actual expected values. Source accounts.csv is protected fictional input. Never invent measurements or edit live files while preparing the proposal.

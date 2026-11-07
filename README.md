@@ -80,19 +80,15 @@ Set `directory` to the **absolute checkout root** containing `ripple.py`, `agent
 
 All three need running sessions and permission to communicate with the owner and the owner's agents. Their standing instructions must read their role under `agents/` and [WORKFLOW.md](agents/WORKFLOW.md). The setup guide includes a manual fallback.
 
-For an existing room, set the coordinator alias once:
+The template maps the mention `@ripple` to the coordinator registered as `ripple-app`. This is a one-time setup mapping, not an extra agent. People mention only `@ripple` for change requests. If an older room lacks this mapping, follow the naming step in [CHAT-FIRST.md](switch/CHAT-FIRST.md).
+
+Confirm readiness through the coordinator:
 
 ```text
-!set-alias @ripple-app @ripple
+@ripple Read your current role file and agents/WORKFLOW.md. Ask the workspace owners to load their instructions and report their checkout root and role. Confirm whether everyone is ready. Do not create a request yet.
 ```
 
-Confirm the agents can access the checkout by sending this in the room:
-
-```text
-@ripple-app @ripple-docs @ripple-report Read your current role file and agents/WORKFLOW.md. Run python3 ripple.py status and report the checkout root and workspace you own. Do not create a request yet.
-```
-
-Use [CHAT-FIRST.md](switch/CHAT-FIRST.md) when updating existing agent sessions. Finish or resolve an active request before switching those sessions to another checkout.
+The coordinator handles worker mentions and collects their replies. Use [CHAT-FIRST.md](switch/CHAT-FIRST.md) when updating existing sessions. Finish or resolve an active request before switching those sessions to another checkout.
 
 ### 3. Complete your first request
 

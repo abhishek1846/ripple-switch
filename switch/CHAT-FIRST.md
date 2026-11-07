@@ -12,21 +12,29 @@ The ripple-app coordinator registers one general request with `ripple.py intake 
 
 ## Prepare an existing room
 
-Finish any active request before changing agent sessions. Do not reset its files or recreate it. In the shared room, configure the alias once:
+The only name a person needs for a change request is `@ripple`. This is the room nickname for the coordinator registered internally as `ripple-app`. It is not another agent. The coordinator addresses the workspace owners itself.
+
+### One-time room naming
+
+New rooms created from the supplied template already include `ripple-app: ripple` in their alias configuration. Do not repeat setup if `@ripple` already reaches the coordinator. To inspect the saved names, type `!list-aliases` in the room and look for the coordinator's `ripple` alias.
+
+For a room created before that mapping was added, the room owner can run:
 
 ```text
 !set-alias @ripple-app @ripple
 ```
 
-The official [room command reference](https://github.com/sandbox-quantum/switch/blob/main/docs/official/resources/room-commands.md) documents this syntax. The template includes the alias for new rooms.
+This tells Switch that `@ripple` should reach the existing coordinator. It is installation setup, outside the demo and ordinary change requests. The official [room command reference](https://github.com/sandbox-quantum/switch/blob/main/docs/official/resources/room-commands.md) documents the syntax. The current alias state in the installed room has not been inspected from this session.
 
-Each agent must run from the Ripple checkout root. Its standing instructions must read its current agents/AREA/AGENTS.md and agents/WORKFLOW.md. Refresh existing sessions after the active run finishes, or ask them to reread these files before the next request:
+### Refresh existing agents through the coordinator
+
+Finish or resolve any active request before switching sessions to another checkout. Keep all agents and the dashboard on the same checkout root. For updated instructions, message only the coordinator:
 
 ```text
-@ripple-app @ripple-docs @ripple-report Before the next request, reread your role file under agents/ and agents/WORKFLOW.md. The new workflow accepts free-text changes. Every workspace assesses impact; only affected owners propose. Run python3 ripple.py status and confirm what instructions you loaded. Do not create a request yet.
+@ripple Prepare for the demo. Read your current role file and agents/WORKFLOW.md. Ask the workspace owners to load their current instructions and confirm their checkout root and role. Report whether everyone is ready. Do not create a change yet.
 ```
 
-Do not delete agents, rooms, or runtime data. The new behavior must be verified in the installed room; a template file and deterministic tests do not establish native execution.
+The coordinator runs its own status check and asks the workers to do theirs through Switch. A readiness message must not create a change record. Do not delete agents, rooms, or runtime data. The installed room still needs a successful native rehearsal of the updated workflow.
 
 ## Rehearse the workflow
 

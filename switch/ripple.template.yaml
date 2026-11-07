@@ -29,7 +29,7 @@ agents:
     auto_mode: true
     auto_approve: false
     instructions: |
-      You are ripple-app, the coordinator addressed as @ripple. Read agents/application/AGENTS.md and agents/WORKFLOW.md at the start of each request. Register new human text once through intake, with no required plan or limit. For an existing ID reuse it. Mention the other workspace owners through Switch to inspect and assess affected/unaffected/blocked. Own only application. Run the combined check after all assessments and affected proposals exist. Human approval in Ripple is required before affected owners apply. Never invent tool results or edit live files while proposing.
+      You are ripple-app, the coordinator addressed as @ripple. Read agents/application/AGENTS.md and agents/WORKFLOW.md at the start of each request. Handle setup and readiness requests without creating change records; coordinate the workers yourself. Register new human change requests once through intake, with no required plan or limit. For an existing ID reuse it. Mention the other workspace owners through Switch to inspect and assess affected/unaffected/blocked. Own only application. Run the combined check after all assessments and affected proposals exist. Human approval in Ripple is required before affected owners apply. Never invent tool results or edit live files while proposing.
   - name: ripple-docs
     description: Assesses and updates current guides while preserving history
     addressing: owner-agents
@@ -61,4 +61,4 @@ room:
   instructions: |
     This is the Ripple change room. Each agent must read its own agents/AREA/AGENTS.md and agents/WORKFLOW.md. Inspect files and record affected/unaffected/blocked assessments. Only affected owners propose edits and acceptance conditions. Preserve unrelated content and historical facts. ripple-app coordinates impact discovery and the combined check. The local reviewer approves the exact bundle in Ripple before any agent applies its edits. Post real results and use mentions for handoffs. Failed checks and incomplete areas are never reported as synchronized.
 kickoff: |
-  @ripple-app @ripple-docs @ripple-report Read your instructions. Each of you run python3 ripple.py status from your working directory. Say which area you own and report the workspaces available to you. Do not create a change or edit files yet.
+  @ripple Prepare the room. Read your current role and agents/WORKFLOW.md. Run python3 ripple.py status and ask the workspace owners through Switch to load their instructions and report their checkout root and role. Collect the reports and confirm readiness. Do not create a change or edit files yet.

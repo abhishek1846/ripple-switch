@@ -19,19 +19,15 @@ If an older server is running, stop it with Ctrl+C first. Open http://127.0.0.1:
 
 2. Resolve any active request. If you still want its changes, review and complete it. If you choose to cancel before application, its record stays in the ledger. A new request remains a draft while another has agent activity.
 
-3. In the Mattermost room, configure the alias once:
+3. Confirm the room's coordinator is addressed as `@ripple`. The supplied template sets that name automatically. An older room may need the one-time naming step in [CHAT-FIRST.md](switch/CHAT-FIRST.md). This setup is outside the recording.
+
+4. If existing sessions need to load the updated workflow, address only the coordinator:
 
 ```text
-!set-alias @ripple-app @ripple
+@ripple Prepare for the demo. Read your current role file and agents/WORKFLOW.md. Ask the workspace owners to load their current instructions and confirm their checkout root and role. Report whether everyone is ready. Do not create a change yet.
 ```
 
-4. Have the running agents load the current workflow:
-
-```text
-@ripple-app @ripple-docs @ripple-report Read your current role file under agents/ and agents/WORKFLOW.md. The workflow now accepts free-text requests. Every owner inspects and assesses impact; only affected owners propose edits and checks. Run python3 ripple.py status and report your checkout root and role. Do not create a request yet.
-```
-
-Confirm their replies refer to the same checkout as the dashboard. The coordinator should use general intake without --plan or --limit. If a provider asks for permission, resolve it before the take.
+The coordinator handles the worker mentions. You do not address each owner. Confirm its readiness report refers to the same checkout as the dashboard. Resolve provider permission prompts before the take.
 
 5. Rehearse the request below once in the actual room. A deterministic feasibility check passed in an isolated workspace: it updated the error, added the linked guide, and preserved limits and reporting. That does not establish native agent execution. Use only a successful native run in the finished video. You can record the first attempt continuously and keep the footage if it succeeds.
 
@@ -40,6 +36,8 @@ For a second take after applying the rehearsal, use a fresh checkout and point b
 6. Keep Mattermost and Ripple in adjacent browser tabs. Use about 125% browser zoom if text is small. On macOS, Command+Shift+5 opens recording controls; choose the browser area and your microphone. Keep connection credentials out of frame.
 
 ## The message to paste
+
+This is the only change request you write. Mention only `@ripple`; the coordinator delegates to the workspace owners through Switch.
 
 ```text
 @ripple When someone selects too many files, add this guidance to the error: "Remove some files or upgrade your plan." Add a short troubleshooting guide and link it from onboarding. Keep limits and forecasts unchanged.
