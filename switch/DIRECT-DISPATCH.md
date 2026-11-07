@@ -1,5 +1,7 @@
 # Send directly from Ripple to Switch
 
+Updated: 2026-11-07
+
 The Send to Switch button uses the documented agent bridge: `POST /agents/{agent_id}/message` with `room_id` and `content`. It records the actual HTTP response and message ID when Switch returns one. It does not launch a model itself or invent a reply. The three working agent sessions must be running in Console.
 
 ## Set up the dispatch identity
@@ -26,9 +28,9 @@ If you already have a dedicated dispatch agent and its API key, enter those deta
 
 1. Create or select a change.
 2. Click Send to Switch. Watch for an actual accepted or failed response. A successful send is not completed agent work.
-3. Open the actual chat. The three working agents receive the request, inspect files, and submit proposals. Their tool activity appears in Ripple.
+3. Open the actual chat. The coordinator hands the request to workspace owners for inspection and impact assessment. Only affected owners submit proposals. Their tool activity appears in Ripple.
 4. Review files and run the combined checks. Approve the exact bundle.
-5. Click Send approval. Each agent applies its area. The final agent triggers actual result checks.
+5. Click Send approval. Each affected owner applies its area. The final affected application triggers result checks.
 
 Successful sends are idempotent per phase and checked approval bundle. Failed sends can be retried. A timeout can occur after the server accepts a message; inspect the real room before retrying an uncertain outcome. The current client does not implement a server-side idempotency key.
 

@@ -5,7 +5,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 ALLOWED_ROOT = {'.gitignore', 'AGENTS.md', 'README.md', 'LICENSE', 'DEMO.md', 'SUBMISSION.md', 'VERIFICATION.md', 'DESIGN.md', 'package.json', 'ripple.py', 'Start Ripple.command'}
-ALLOWED_DIRS = {'.github', 'ripple', 'web', 'agents', 'switch', 'tests', 'scripts', 'workspaces'}
+ALLOWED_DIRS = {'.github', 'ripple', 'web', 'agents', 'switch', 'tests', 'scripts', 'workspaces', 'docs'}
 FORBIDDEN = {'.ripple', '__pycache__', '.git', 'uploads', 'node_modules', 'artifacts'}
 
 
@@ -18,7 +18,7 @@ def source_files():
             continue
         if len(rel.parts) == 1 and rel.name in ALLOWED_ROOT:
             yield path, rel
-        elif len(rel.parts) > 1 and rel.parts[0] in ALLOWED_DIRS and path.suffix in {'.py', '.js', '.mjs', '.css', '.html', '.svg', '.md', '.json', '.csv', '.yaml', '.yml', '.txt', '.command'}:
+        elif len(rel.parts) > 1 and rel.parts[0] in ALLOWED_DIRS and path.suffix in {'.py', '.js', '.mjs', '.css', '.html', '.svg', '.md', '.json', '.csv', '.yaml', '.yml', '.txt', '.command', '.jpg'}:
             yield path, rel
 
 

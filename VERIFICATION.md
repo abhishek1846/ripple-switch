@@ -2,40 +2,49 @@
 
 Updated: 2026-11-07
 
-Observed November 7, 2026.
+This record separates software checks from observed native Switch work.
 
-- Forty-three isolated Python workflow and Switch transport tests pass locally. General cases cover free-text intake, two-area rename, one-area new documentation, JSON/CSV acceptance conditions, blocked questions, reassessment, scope revision revoking approval, protected files, failed-write rollback, and outside edits invalidating approval. The earlier plan-limit, draft, and transport tests also pass.
-- JavaScript syntax check passes.
-- The end-to-end test uses actual isolated workspaces, submits file proposals, checks them without changing live files, approves, applies each area, and verifies the resulting application behavior and calculated CSV output.
-- Negative tests catch stale onboarding, incorrect forecast values, unintended changes to another plan, stale file inspections, intervening human edits, invalid paths, premature application, and reused approvals after a proposal changes.
-- Repeat application is idempotent. Missing areas remain incomplete.
-- A Pro-only change also passes without altering Basic.
-- Earlier published revisions passed 19 tests and real Chromium checks. The draft revision passed browser run 42373123195 on 59bed47dc3df2288320d58b0abdfae6394d88fa3. General request browser run [42375088495](https://github.com/abhishek1846/ripple-switch/actions/runs/42375088495) passed on da61be24a29b780d804ec3ff5dfaa5d5d06b02d4. It exercised free-text creation, drafts/resume, a two-area rename with an unaffected report, selective approval and application, a one-area new guide, legacy application behavior, and mobile layout. Five screenshots are retained; its overview preview was visually inspected. The subsequent title/check wording pass is being checked separately.
-- Static HTML checks confirmed unique element IDs and existing local asset references.
+## Current software evidence
 
-These are software tests with deterministic fixtures. They do not establish AI-agent execution or a working Switch connection.
+- All 43 isolated Python workflow and Switch transport tests pass.
+- JavaScript syntax checks pass.
+- [Browser run 42375309457](https://github.com/abhishek1846/ripple-switch/actions/runs/42375309457) passed on `8b0e51d4a5edff247624af6ef0943384f4fb0094`.
+- Chromium exercised free-text creation, draft/save/resume, a two-workspace rename, unaffected reporting, selective approval/application, a documentation-only new guide, the older plan-limit workflow, and mobile layout.
+- Its overview preview was inspected. The README image is that unmodified preview. Displayed proposals are explicitly deterministic test fixtures.
 
-Switch transport tests use explicit HTTP stubs to check wire format, truthful failure/retry state, idempotent sends, secret exclusion, owner-only credential storage, and separation of message acceptance from actual agent work. Stubs are not a live server test.
+Python coverage includes request-specific text, JSON, and CSV conditions; blocked questions and clarification; scope revisions revoking approval; protected paths; outside edits invalidating approval; failed-write rollback; draft handling; and message-ID deduplication. The older verifier tests actual application behavior, current guides, preserved history, and independent forecast calculations.
 
-## Browser CI verified
+Switch transport tests use HTTP stubs to exercise the request contract, failures and retries, idempotent successful sends, secret exclusion, and separation of message acceptance from workspace activity. These do not establish a live send.
 
-GitHub Actions run [42358625642](https://github.com/abhishek1846/ripple-switch/actions/runs/42358625642) passed on published commit `6a2b12cbdd20bf721794380f3850a80260f207ad`.
+## Recording-script feasibility
 
-Real Chromium checks covered creating a change, visible unconnected state, opening the connection dialog, copying the manual handoff, viewing empty proposals, testing the initial validator, preparing explicit deterministic proposals, checking and reviewing files, approving, applying test fixtures, and checking the actual updated validator and forecast. The mobile viewport check passed without horizontal page overflow. Another change correctly starts from the updated limit.
+The request in DEMO.md was exercised using deterministic proposals in an isolated temporary workspace. The original user workspace was untouched.
 
-Four screenshots and the browser result are saved in the run's `ripple-browser-checks` artifact. Screenshots after proposal preparation are explicitly test-fixture states. No live Switch execution is claimed.
+Observed outcome:
 
-## Installed workspace evidence
+- The Basic eleven-file sample was rejected before and after application.
+- Before: `This Basic project supports 5 files. You selected 11.`
+- After: `This Basic project supports 5 files. You selected 11. Remove some files or upgrade your plan.`
+- A new troubleshooting guide was added and linked from onboarding.
+- Application and documentation were the two affected areas.
+- Plan configuration, reporting files, and archived history remained unchanged.
+- Candidate checks passed before application. Final recorded conditions passed after application.
 
-The actual saved Switch connection reports a successful probe at 12:16:58 UTC on November 7. R-5514B6 has inspections and proposals attributed to ripple-app, ripple-docs, and ripple-report. Its combined candidate checks passed at 12:17:46 UTC. The request is awaiting human review. These are actual local receipts, not test fixtures. This session has not inspected the native Mattermost conversation or observed final application.
+This proves the script's requested outcome is feasible with the implemented engine. It is not a native agent rehearsal. Native agents may choose a different guide filename; use the actual path from their proposal in the recording.
 
-The public source repository exists at https://github.com/abhishek1846/ripple-switch.
+## Observed installed workspace
 
-## Not yet verified
+The saved Switch connection passed its server/room probe at 12:16:58 UTC on November 7. The original R-5514B6 has inspections and proposals attributed to ripple-app, ripple-docs, and ripple-report. Its combined candidate checks passed at 12:17:46 UTC. The last observed state is awaiting human approval, with no areas applied.
 
-- Native execution of the updated template and general @ripple free-text intake, assessments, and selective application in the installed room.
-- Direct inspection of actual chat handoffs, final human approval, and agent application for the first complete run.
-- Direct inspection of the user's running browser. This session cannot access its loopback port. Browser interaction was verified independently in GitHub Actions.
-- Video upload and form submission.
+These are local receipts from the installed workspace. This session cannot directly inspect the Mattermost conversation or access its loopback endpoints. Actor labels in local tool receipts are caller-supplied metadata.
 
-Update this record after each observed result. Preserve evidence of the actual run and distinguish it from test fixtures.
+The public repository is https://github.com/abhishek1846/ripple-switch.
+
+## Still to verify
+
+- Native execution of the updated template, free-text intake, impact assessments, and selective application in the installed Switch room.
+- The complete actual conversation and final application of the first request.
+- The new DEMO.md scenario rehearsed through those native agents.
+- Recorded video upload and the user's hackathon submission.
+
+Update this file from observed results. Keep deterministic test evidence distinct from native agent execution.

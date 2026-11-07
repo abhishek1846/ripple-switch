@@ -1,53 +1,120 @@
-# Ripple recording
+# Ripple video script
 
 Updated: 2026-11-07
 
-Target: 2 minutes 40 seconds. The form requires under three minutes on YouTube or Loom, public or unlisted. Show the actual chat and resulting work. Cuts can shorten waiting while preserving the order and outcomes.
+Record one change from the Mattermost request to the applied result. Aim for **2:35**, leaving room below the submission's three-minute limit. Read only the quoted narration aloud. The instructions beside it are your screen actions.
 
-## Prepare
+The scenario improves an application's error message and adds a linked help guide. It gives the viewer a visible application result and shows that reporting can remain untouched. It uses the general free-text flow.
 
-The original R-5514B6 has checked proposals awaiting human approval. Finish or explicitly resolve that run before starting another. Its legacy verifier and approval remain supported. Do not reset its workspace files behind the agents.
+## Before pressing record
 
-Follow switch/CHAT-FIRST.md to load the new instructions and configure the alias. Rehearse a general request in the installed room before recording. No completed native general run is claimed yet.
+1. Restart the local server from the checkout your agents use, then refresh Ripple:
 
-Use a fresh source checkout for repeatable starting data after the first run. Start its server on another port and point agent sessions at that checkout. Do not mix a dashboard for one checkout with agents working in another. Review links use port 8790 by default; adjust the link if using another port.
-
-On macOS, Command+Shift+5 opens recording controls. Select the browser area and microphone. Keep Mattermost and Ripple in adjacent tabs. Hide credentials and unrelated personal material.
-
-## 0:00-0:20 - The request
-
-Start in Mattermost:
-
-```text
-@ripple Rename Parcel to Relay in current product references. Preserve historical release notes and keep product behavior unchanged.
+```bash
+cd /Users/abhisheksingh/Projects/ripple
+python3 ripple.py serve
 ```
 
-"A decision starts in chat. Its consequences live in other places. Ripple follows the change through the work."
+If an older server is running, stop it with Ctrl+C first. Open http://127.0.0.1:8790. Keep the Terminal open.
 
-## 0:20-0:55 - Discover the impact
+2. Resolve any active request. If you still want its changes, review and complete it. If you choose to cancel before application, its record stays in the ledger. A new request remains a draft while another has agent activity.
 
-Show the coordinator create one record and hand its ID to the workspace owners through Switch. Show the actual inspections. Application and documentation explain their affected references. Reporting explains why its numeric workbook can remain unchanged, if that is what its inspection finds.
+3. In the Mattermost room, configure the alias once:
 
-"Each owner checks its own context. A workspace can need edits, stay unchanged, or ask a question."
+```text
+!set-alias @ripple-app @ripple
+```
 
-## 0:55-1:30 - Review
+4. Have the running agents load the current workflow:
 
-Open the returned Ripple link. Show the assessment reasons, the proposed edits, and the acceptance conditions. Show preserved historical files. Use the observed results rather than reading a prepared success claim.
+```text
+@ripple-app @ripple-docs @ripple-report Read your current role file under agents/ and agents/WORKFLOW.md. The workflow now accepts free-text requests. Every owner inspects and assesses impact; only affected owners propose edits and checks. Run python3 ripple.py status and report your checkout root and role. Do not create a request yet.
+```
 
-"The review includes what will change and why the other work stays as it is."
+Confirm their replies refer to the same checkout as the dashboard. The coordinator should use general intake without --plan or --limit. If a provider asks for permission, resolve it before the take.
 
-## 1:30-2:05 - Apply
+5. Rehearse the request below once in the actual room. A deterministic feasibility check passed in an isolated workspace: it updated the error, added the linked guide, and preserved limits and reporting. That does not establish native agent execution. Record only after the native flow succeeds.
 
-Approve the checked bundle in Ripple and send the approval to the room. Show only affected owners applying their proposals. Show the final check against the updated files, then open the changed application and guide in Workspaces.
+For a second take after applying the rehearsal, use a fresh checkout and point both the server and agents at it. Do not reset files behind active sessions. You may instead record the successful first run continuously, then cut waiting from that recording.
 
-## 2:05-2:30 - Another kind of change
+6. Keep Mattermost and Ripple in adjacent browser tabs. Use about 125% browser zoom if text is small. On macOS, Command+Shift+5 opens recording controls; choose the browser area and your microphone. Keep connection credentials out of frame.
 
-If rehearsed and time permits, show a cut to a second actual request adding and linking a customer guide. Show its single affected owner and the resulting new file. Label the cut so it does not imply simultaneous execution. Omit this segment if it would push the recording over three minutes.
+## The message to paste
 
-## 2:30-2:40 - Close
+```text
+@ripple When someone selects too many files, add this guidance to the error: "Remove some files or upgrade your plan." Add a short troubleshooting guide and link it from onboarding. Keep limits and forecasts unchanged.
+```
 
-"Write the change once. Follow the affected work through review and application."
+## 0:00-0:15 - Start in the conversation
 
-Show the public repository: https://github.com/abhishek1846/ripple-switch. This entry connects three local workspaces through native Switch agents. General checks prove recorded acceptance conditions; human review determines whether they cover the request.
+**Show:** Mattermost with the Ripple agents in the shared room. Put the cursor in the message box.
 
-Verify the uploaded video is accessible while signed out. The user must submit the form personally.
+**Say:**
+
+> A decision in chat often means follow-up work across the product and its documentation. Ripple lets me describe the change once and have agents carry the affected work through review and application.
+
+## 0:15-0:30 - Send the request
+
+**Do:** Paste the message above and send it. Keep the full request visible briefly. Show the coordinator return one request ID and address the workspace owners.
+
+**Say:**
+
+> Here, I want a more useful error message and a help guide. I also want the limits and forecast preserved. I send that request to Ripple in Mattermost.
+
+If agent responses take time, keep recording and trim the wait later. Preserve the order of events.
+
+## 0:30-0:55 - Show the impact
+
+**Do:** Show the agents' inspection replies. Highlight the application and documentation findings, then reporting's unaffected assessment. Switch to Ripple and select the matching request ID in the ledger. While the owners prepare proposals, open **Workspaces**, choose **Basic**, and click **Try 11 sample filenames** to capture the original rejection message.
+
+**Say:**
+
+> Switch carries the handoffs between the agents. Each owner checks its own workspace. Application and documentation need changes. Reporting explains why its files can stay unchanged. This is the original error, before anything is applied.
+
+Use those outcome lines only if the actual findings match. Resolve a blocked question before continuing.
+
+## 0:55-1:25 - Review the proposal
+
+**Do:** Open **Overview**. Show the two affected workspaces and reporting's reason. When the status becomes **Your review needed**, choose **Review files**. Open the application diff and the new guide. Show the onboarding link. Return to Overview and briefly show the passing candidate checks.
+
+**Say:**
+
+> Ripple brings the proposed edits together. I can review the error message, the new guide, and its onboarding link. The files have not changed yet. I also review the checks the agents supplied and whether they cover my request.
+
+## 1:25-1:45 - Approve
+
+**Do:** Click **Approve changes**, then **Send approval**. Switch to Mattermost and show the approval message and the affected owners' application replies.
+
+If direct dispatch is unavailable, choose **Open approval message**, copy it, and paste it into the same room. Use that route in the take rather than opening connection settings.
+
+**Say:**
+
+> I approve the checked proposal and send the decision back through Switch. The affected owners apply their parts. Reporting has no edits to apply.
+
+Trim waiting, with a small “Waiting time shortened” caption at the cut. Do not skip from approval to a result from a different request.
+
+## 1:45-2:20 - Prove the result
+
+**Do:** Wait for the request to reach **Verified**. In **Workspaces**, choose Basic and click **Try 11 sample filenames** again. Show the new “Remove some files or upgrade your plan” guidance. Open the new guide and show its link in onboarding. Return to Overview and show the applied workspaces, unaffected reporting, and checks against the updated files.
+
+**Say:**
+
+> The same over-limit selection is still rejected, but now it tells the user what to do. The guide is present and linked from onboarding. The limits and reporting files are unchanged. Ripple has checked the applied files against the recorded conditions.
+
+If anything is incomplete or failed, fix it before using this narration. Never record a success claim over a failed result.
+
+## 2:20-2:35 - Close
+
+**Show:** The completed request with its affected owners and final checks. Briefly show the public repository if time permits.
+
+**Say:**
+
+> The request could have been a rename or a documentation change. Ripple starts with the text and discovers the impact. Switch carries the conversation, and Ripple keeps the review and resulting work together. Change it once. Update everything affected.
+
+Repository: https://github.com/abhishek1846/ripple-switch
+
+## Finish the recording
+
+Remove quiet waiting and accidental pauses. Keep the request, handoffs, review, approval, and resulting changes in their true order. Aim for 2:35 and stop before 2:50. Do not speed through unreadable agent replies to fit the limit.
+
+Upload to YouTube or Loom as public or unlisted. Confirm the video opens while signed out. The final upload must be under three minutes. The user must submit the hackathon form personally.
