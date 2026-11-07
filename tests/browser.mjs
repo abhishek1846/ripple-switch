@@ -114,7 +114,7 @@ try {
   }
   await page.locator('#next-step [data-action=files]').click();
   assert.equal(await page.locator('.file-diff').count(), 2);
-  await page.locator('.file-diff').first().locator('summary').click();
+  await page.locator('.file-diff').first().locator(':scope > summary').click();
   await visible('.file-diff[open] .unified-diff');
   assert.ok(await page.locator('.file-diff[open] .diff-line.added').count());
   assert.ok(await page.locator('.file-diff[open] .diff-line.removed').count());
