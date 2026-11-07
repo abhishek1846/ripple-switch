@@ -1,0 +1,9 @@
+.ripple/
+__pycache__/
+*.pyc
+.DS_Store
+artifacts/
+node_modules/
+.env
+.env.*
+workspaces/application/uploads/

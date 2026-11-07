@@ -1,0 +1,62 @@
+# Based on the documented Switch version-1 multi-agent template format.
+# Requires a real connected messaging app. Native validation and execution
+# in the user's installed Console are still required.
+version: 1
+params:
+  directory:
+    type: directory
+    description: Absolute path to your Ripple checkout, containing ripple.py
+    required: true
+  provider:
+    type: provider
+    default: [codex, claude, opencode]
+    input: advanced
+  location:
+    type: location
+    default: local
+    input: advanced
+  bridge:
+    type: bridge
+    description: The messaging app in which people and agents will work
+    default: [$first]
+agents:
+  - name: ripple-app
+    description: Updates Parcel application behavior and coordinates combined verification
+    addressing: owner-agents
+    provider: "{provider}"
+    location: "{location}"
+    directory: "{directory}"
+    auto_mode: true
+    auto_approve: false
+    instructions: |
+      You are ripple-app. Read agents/application/AGENTS.md and agents/WORKFLOW.md in your working directory. Use the real Ripple CLI and report actual results. You own only the application area and coordinate the combined check once all three proposals exist. Never approve changes for the human or edit live files directly. After the human approves in Ripple and announces approval in chat, apply your own area with the CLI.
+  - name: ripple-docs
+    description: Updates current help pages while preserving historical facts
+    addressing: owner-agents
+    provider: "{provider}"
+    location: "{location}"
+    directory: "{directory}"
+    auto_mode: true
+    auto_approve: false
+    instructions: |
+      You are ripple-docs. Read agents/documentation/AGENTS.md and agents/WORKFLOW.md in your working directory. You own only documentation. Inspect actual files and propose current-guide and onboarding edits through the Ripple CLI. Preserve historical release notes and unaffected plans. Mention @ripple-app after submitting a proposal so it can check the combined bundle. Never approve changes for the human or edit live files directly. After the human approves in Ripple and announces approval in chat, apply your own area with the CLI.
+  - name: ripple-report
+    description: Recalculates the capacity workbook from source account data
+    addressing: owner-agents
+    provider: "{provider}"
+    location: "{location}"
+    directory: "{directory}"
+    auto_mode: true
+    auto_approve: false
+    instructions: |
+      You are ripple-report. Read agents/reporting/AGENTS.md and agents/WORKFLOW.md in your working directory. You own only reporting. Inspect the actual CSV inputs and generator, run the calculation on a temporary copy, and propose the changed assumption and actual regenerated forecast through the Ripple CLI. Preserve account inputs and unaffected plans. Mention @ripple-app after submitting. Never approve changes for the human or edit live files directly. After the human approves in Ripple and announces approval in chat, apply your own area with the CLI.
+room:
+  name: ripple-change-room
+  description: One decision followed through application, documentation, and reporting
+  bridge: "{bridge}"
+  agents: [ripple-app, ripple-docs, ripple-report]
+  users: ["{$creator}"]
+  instructions: |
+    This is the Ripple change room. Each agent must read its own agents/AREA/AGENTS.md and agents/WORKFLOW.md. Inspect real files, prepare proposals through the CLI, and preserve unaffected plans and historical facts. ripple-app coordinates the combined check. The local reviewer approves the exact bundle in Ripple before any agent applies its edits. Post real results and use mentions for handoffs. Failed checks and incomplete areas are never reported as synchronized.
+kickoff: |
+  @ripple-app @ripple-docs @ripple-report Read your instructions. Each of you run python3 ripple.py status from your working directory. Say which area you own and report the actual current Basic limit. Do not create a change or edit files yet.

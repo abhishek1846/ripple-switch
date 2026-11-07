@@ -1,0 +1,9 @@
+Help me set up Ripple for the Flip the Switch hackathon. Work from /Users/abhisheksingh/Projects/ripple.
+
+First verify this folder exists and read switch/SETUP.md, switch/ROOM.md, and switch/ripple.template.yaml. I need a real messaging-app room, not just a private Console assistant conversation.
+
+Use the version-1 template if my installed Console supports it. The directory param is /Users/abhisheksingh/Projects/ripple, provider Codex, location this computer. Use a connected chat app. If none is connected, guide me through connecting one; do not claim an empty bridge is ready.
+
+Create or reuse exactly these agents: ripple-app, ripple-docs, ripple-report. All run from the project root with their distinct instructions in agents/application/AGENTS.md, agents/documentation/AGENTS.md, and agents/reporting/AGENTS.md. Keep normal provider permissions enabled. Use the room instructions from switch/ROOM.md. Agents owned by me should accept messages from me and my other agents.
+
+Start real sessions and put all three agents and me in one connected chat room. First smoke test: ask each agent to run python3 ripple.py status and report the actual Basic file limit. Stop and explain any unavailable provider, missing working directory, or disconnected bridge. Do not simulate success or fill in a fabricated conversation.

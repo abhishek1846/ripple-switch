@@ -1,0 +1,4 @@
+{
+  "basic": {"files_per_project": 5},
+  "pro": {"files_per_project": 25}
+}

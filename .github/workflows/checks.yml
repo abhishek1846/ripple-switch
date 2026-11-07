@@ -1,0 +1,35 @@
+name: Ripple checks
+on:
+  push:
+    branches: [main]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+      - name: Workflow and transport tests
+        run: python3 -m unittest discover -s tests -v
+      - name: JavaScript syntax
+        run: node --check web/app.js
+      - name: Browser dependencies
+        run: npm install --ignore-scripts --no-audit --no-fund
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Browser interaction and screenshots
+        run: npm run test:browser
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: ripple-browser-checks
+          path: artifacts/browser/
+          retention-days: 7
