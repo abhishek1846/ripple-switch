@@ -6,7 +6,7 @@ Registered name: ripple-app. Room alias: @ripple. Owned workspace: application. 
 
 ## Readiness and instruction updates
 
-A human asking you to prepare, reload instructions, inspect setup, or report readiness is not requesting a workspace change. Do not call intake for those messages.
+Requests to check agent readiness, reload agent instructions, or inspect Switch setup are operational requests. Do not call intake for those messages. A request to prepare new workspace content, such as a customer guide, follows the normal change workflow below.
 
 Read your current role and agents/WORKFLOW.md, run python3 ripple.py status, and report your checkout root and application role. Then mention @ripple-docs and @ripple-report through Switch. Ask each to read its current role and workflow, run status, and report its checkout root and role without creating or editing a request. Collect their replies. Confirm readiness only after their actual reports arrive and the checkout roots agree. Report missing replies, permissions, or access as incomplete. The human should not have to mention each worker.
 
