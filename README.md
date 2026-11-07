@@ -6,7 +6,7 @@ A plan limit changes in team chat. The application, help guide, and capacity wor
 
 Built for the November 4-7, 2026 Flip the Switch Hackathon. Selected track: Best Business Workflow.
 
-Current status: the local workflow and direct Switch HTTP transport are implemented. Nineteen software tests pass. A real Switch server, room, and model-agent run must still be connected and recorded. Browser CI results are tracked in the repository Actions tab.
+Current status: nineteen workflow and transport tests and real Chromium interaction checks pass in [GitHub Actions](https://github.com/abhishek1846/ripple-switch/actions). A real Switch server, room, and model-agent run must still be connected and recorded. The direct HTTP transport is implemented and contract-tested; it has not yet been exercised against the user's live server.
 
 ## Run the local app
 

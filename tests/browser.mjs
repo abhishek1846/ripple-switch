@@ -42,6 +42,10 @@ try {
   const cid = state.changes.at(-1).id;
   assert.deepEqual(state.changes.at(-1).inspections, {});
   await screenshot('02-change-awaiting-switch');
+  if (process.env.RIPPLE_CI_PREVIEW === '1') {
+    const preview = await page.screenshot({type: 'jpeg', quality: 35, fullPage: true});
+    console.log('RIPPLE_PREVIEW_BASE64=' + preview.toString('base64'));
+  }
   await page.locator('#next-step [data-action=connect]').click();
   await visible('#switch-dialog');
   assert.match(await page.locator('#switch-current-state').textContent(), /No room connected/);

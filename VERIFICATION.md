@@ -15,12 +15,19 @@ These are software tests with deterministic fixtures. They do not establish AI-a
 
 Switch transport tests use explicit HTTP stubs to check wire format, truthful failure/retry state, idempotent sends, secret exclusion, owner-only credential storage, and separation of message acceptance from actual agent work. Stubs are not a live server test.
 
+## Browser CI verified
+
+GitHub Actions run [42358625642](https://github.com/abhishek1846/ripple-switch/actions/runs/42358625642) passed on published commit `6a2b12cbdd20bf721794380f3850a80260f207ad`.
+
+Real Chromium checks covered creating a change, visible unconnected state, opening the connection dialog, copying the manual handoff, viewing empty proposals, testing the initial validator, preparing explicit deterministic proposals, checking and reviewing files, approving, applying test fixtures, and checking the actual updated validator and forecast. The mobile viewport check passed without horizontal page overflow. Another change correctly starts from the updated limit.
+
+Four screenshots and the browser result are saved in the run's `ripple-browser-checks` artifact. Screenshots after proposal preparation are explicitly test-fixture states. No live Switch execution is claimed.
+
 ## Not yet verified
 
 - Real Switch Console installation, server, provider, connected messaging app, native template execution, and live HTTP dispatch.
-- Chromium browser interaction CI for the redesigned interface.
 - Actual agent inspections, proposals, handoffs, and application in a connected chat.
-- Browser rendering or interaction. This session's attempt to bind a local server returned Operation not permitted. The user can run the local server in a normal Terminal.
+- Direct inspection of the user's running browser. This session cannot access its loopback port. Browser interaction was verified independently in GitHub Actions.
 - Public GitHub source publication, video upload, and form submission.
 
 Update this record after each observed result. Preserve evidence of the actual run and distinguish it from test fixtures.

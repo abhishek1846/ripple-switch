@@ -183,6 +183,11 @@ class Switch:
 
     def register(self, server, registration_key, room_id, room_url=''):
         server = validate_address(server)
+        room_id = identifier(room_id, 'room ID')
+        if room_url:
+            parsed = urlparse(room_url)
+            if parsed.scheme not in ('http', 'https') or not parsed.hostname or parsed.username or parsed.password:
+                raise RippleError('Use an http or https link to the actual chat room')
         response = request_json(server + '/agents', registration_key, {'name': 'ripple-dispatch', 'description': 'Posts human-authorized Ripple change requests into the shared room.', 'connector_type': 'ripple-http-dispatch', 'integration_profile': {'connection_model': 'session_passive', 'message_exchange': True, 'pre_invocation_mediation': [], 'post_invocation_mediation': [], 'event_reporting': []}})
         if not isinstance(response, dict) or not response.get('id') or not response.get('api_key'):
             raise RippleError('Registration did not return an agent identity and key')

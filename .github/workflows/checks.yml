@@ -27,6 +27,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Browser interaction and screenshots
         run: npm run test:browser
+        env:
+          RIPPLE_CI_PREVIEW: '1'
       - uses: actions/upload-artifact@v5
         if: always()
         with:
