@@ -33,9 +33,9 @@ If an older server is running, stop it with Ctrl+C first. Open http://127.0.0.1:
 
 Confirm their replies refer to the same checkout as the dashboard. The coordinator should use general intake without --plan or --limit. If a provider asks for permission, resolve it before the take.
 
-5. Rehearse the request below once in the actual room. A deterministic feasibility check passed in an isolated workspace: it updated the error, added the linked guide, and preserved limits and reporting. That does not establish native agent execution. Record only after the native flow succeeds.
+5. Rehearse the request below once in the actual room. A deterministic feasibility check passed in an isolated workspace: it updated the error, added the linked guide, and preserved limits and reporting. That does not establish native agent execution. Use only a successful native run in the finished video. You can record the first attempt continuously and keep the footage if it succeeds.
 
-For a second take after applying the rehearsal, use a fresh checkout and point both the server and agents at it. Do not reset files behind active sessions. You may instead record the successful first run continuously, then cut waiting from that recording.
+For a second take after applying the rehearsal, use a fresh checkout and point both the server and agents at it. Do not reset files behind active sessions.
 
 6. Keep Mattermost and Ripple in adjacent browser tabs. Use about 125% browser zoom if text is small. On macOS, Command+Shift+5 opens recording controls; choose the browser area and your microphone. Keep connection credentials out of frame.
 
