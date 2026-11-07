@@ -2,13 +2,13 @@
 
 Observed November 7, 2026.
 
-- Nineteen Python workflow and Switch transport tests pass.
+- Twenty-six Python workflow and Switch transport tests pass locally. They include draft preservation, safe resume against current files, continued active work while creating drafts, and deduplication by an actual source message ID.
 - JavaScript syntax check passes.
 - The end-to-end test uses actual isolated workspaces, submits file proposals, checks them without changing live files, approves, applies each area, and verifies the resulting application behavior and calculated CSV output.
 - Negative tests catch stale onboarding, incorrect forecast values, unintended changes to another plan, stale file inspections, intervening human edits, invalid paths, premature application, and reused approvals after a proposal changes.
 - Repeat application is idempotent. Missing areas remain incomplete.
 - A Pro-only change also passes without altering Basic.
-- The earlier source ZIP passed 12 workflow tests in a separate checkout. After the redesign, 19 tests pass locally; the new package and remote browser checks will be recorded separately.
+- Earlier published revisions passed 19 tests and real Chromium checks. Browser coverage for the new draft and form behavior is being run separately.
 - Static HTML checks confirmed unique element IDs and existing local asset references.
 
 These are software tests with deterministic fixtures. They do not establish AI-agent execution or a working Switch connection.
@@ -23,11 +23,17 @@ Real Chromium checks covered creating a change, visible unconnected state, openi
 
 Four screenshots and the browser result are saved in the run's `ripple-browser-checks` artifact. Screenshots after proposal preparation are explicitly test-fixture states. No live Switch execution is claimed.
 
+## Installed workspace evidence
+
+The actual saved Switch connection reports a successful probe at 12:16:58 UTC on November 7. R-5514B6 has inspections and proposals attributed to ripple-app, ripple-docs, and ripple-report. Its combined candidate checks passed at 12:17:46 UTC. The request is awaiting human review. These are actual local receipts, not test fixtures. This session has not inspected the native Mattermost conversation or observed final application.
+
+The public source repository exists at https://github.com/abhishek1846/ripple-switch.
+
 ## Not yet verified
 
-- Real Switch Console installation, server, provider, connected messaging app, native template execution, and live HTTP dispatch.
-- Actual agent inspections, proposals, handoffs, and application in a connected chat.
+- Native execution of the updated template and @ripple chat-first intake in the installed room.
+- Direct inspection of actual chat handoffs, final human approval, and agent application for the first complete run.
 - Direct inspection of the user's running browser. This session cannot access its loopback port. Browser interaction was verified independently in GitHub Actions.
-- Public GitHub source publication, video upload, and form submission.
+- Video upload and form submission.
 
 Update this record after each observed result. Preserve evidence of the actual run and distinguish it from test fixtures.

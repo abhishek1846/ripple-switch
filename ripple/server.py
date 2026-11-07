@@ -26,7 +26,7 @@ def mutate(app, path, data):
     if path == '/api/switch/test':
         return Switch(app).test()
     if path == '/api/changes':
-        return app.start(data.get('request'), data.get('plan', 'basic'), data.get('limit', 10))
+        return app.start(data.get('request'), data.get('plan', 'basic'), data.get('limit', 10), data.get('draft', False))
     if path == '/api/validate':
         return validate_files(app, data)
     pieces = path.strip('/').split('/')
@@ -38,6 +38,10 @@ def mutate(app, path, data):
             return app.approve(change)
         if action == 'cancel':
             return app.cancel(change)
+        if action == 'draft':
+            return app.draft(change)
+        if action == 'resume':
+            return app.resume(change)
         if action == 'dispatch':
             return Switch(app).dispatch(change, data.get('phase', 'request'))
     raise RippleError('Unknown action')

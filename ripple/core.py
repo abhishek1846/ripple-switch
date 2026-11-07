@@ -97,21 +97,75 @@ class Ripple:
                 return change
         raise RippleError('Change not found')
 
-    def start(self, request, plan='basic', limit=10):
+    @staticmethod
+    def _parkable(change):
+        return change['status'] == 'discovering' and not any(change.get(key) for key in ('inspections', 'proposals', 'applied', 'dispatches'))
+
+    @staticmethod
+    def _active(state, excluding=None):
+        return next((c for c in state['changes'] if c['id'] != excluding and c['status'] not in ('draft', 'complete', 'cancelled')), None)
+
+    def _save_draft(self, state, change):
+        if change['status'] == 'draft':
+            return
+        if not self._parkable(change):
+            raise RippleError('This request has agent activity. It will keep running while you create a separate draft.')
+        change['status'] = 'draft'
+        change['drafted_at'] = now()
+        self.event(state, 'draft_saved', change['id'], 'local reviewer', 'Saved the unsent request as a draft. No workspace files changed.')
+
+    def draft(self, change_id):
+        with self.state() as state:
+            change = self._change(state, change_id)
+            self._save_draft(state, change)
+            return self.public_change(change)
+
+    def resume(self, change_id):
+        with self.state() as state:
+            change = self._change(state, change_id)
+            if change['status'] != 'draft':
+                raise RippleError('Only a saved draft can be resumed')
+            active = self._active(state, excluding=change_id)
+            if active:
+                raise RippleError(f'{active["id"]} is still active. This draft is saved; resume it after that request finishes or is saved as a draft.')
+            baseline = self.snapshot()
+            before = json.loads(baseline['application/plans.json']['content'])[change['target']['plan']]['files_per_project']
+            if before == change['target']['limit']:
+                raise RippleError('The requested limit is already in place. Keep this draft or create a request with a different target.')
+            change.update({'status': 'discovering', 'baseline': baseline, 'before': before, 'resumed_at': now()})
+            self.event(state, 'resumed', change_id, 'local reviewer', 'Resumed the draft against the current workspace files.')
+            return self.public_change(change)
+
+    def start(self, request, plan='basic', limit=10, draft=False, origin='dashboard', source_message_id=None):
         if not isinstance(request, str) or not request.strip() or len(request) > 8000:
             raise RippleError('Describe the change in 1 to 8000 characters')
         if plan not in ('basic', 'pro') or type(limit) is not int or not 1 <= limit <= 100:
             raise RippleError('Choose basic or pro and a limit from 1 to 100')
+        if type(draft) is not bool:
+            raise RippleError('Draft must be true or false')
+        if origin not in ('dashboard', 'mattermost', 'cli'):
+            raise RippleError('Unknown request origin')
+        if source_message_id is not None and (not isinstance(source_message_id, str) or not source_message_id.strip() or len(source_message_id) > 500):
+            raise RippleError('Use the actual short message ID when one is available')
         with self.state() as state:
-            if any(c['status'] not in ('complete', 'cancelled') for c in state['changes']):
-                raise RippleError('Finish or cancel the current change before starting another')
+            if source_message_id:
+                existing = next((c for c in state['changes'] if c.get('origin') == origin and c.get('source_message_id') == source_message_id), None)
+                if existing:
+                    if existing['target'] != {'plan': plan, 'limit': limit}:
+                        raise RippleError('This chat message already has a request with a different target')
+                    return self.public_change(existing)
             baseline = self.snapshot()
             before = json.loads(baseline['application/plans.json']['content'])[plan]['files_per_project']
             if before == limit:
                 raise RippleError('The application already has that limit')
-            change = {'id': 'R-' + secrets.token_hex(3).upper(), 'request': request.strip(), 'target': {'plan': plan, 'limit': limit}, 'before': before, 'created': now(), 'status': 'discovering', 'baseline': baseline, 'proposals': {}, 'inspections': {}, 'applied': {}, 'check': None, 'approval': None}
+            if not draft:
+                for existing in state['changes']:
+                    if self._parkable(existing):
+                        self._save_draft(state, existing)
+            queued = draft or self._active(state) is not None
+            change = {'id': 'R-' + secrets.token_hex(3).upper(), 'request': request.strip(), 'target': {'plan': plan, 'limit': limit}, 'before': before, 'created': now(), 'origin': origin, 'source_message_id': source_message_id, 'status': 'draft' if queued else 'discovering', 'baseline': baseline, 'proposals': {}, 'inspections': {}, 'applied': {}, 'check': None, 'approval': None}
             state['changes'].append(change)
-            self.event(state, 'requested', change['id'], 'reviewer', request.strip())
+            self.event(state, 'draft_created' if queued else 'requested', change['id'], 'Mattermost request' if origin == 'mattermost' else 'reviewer', request.strip(), origin=origin, source_message_id=source_message_id)
             return self.public_change(change)
 
     def inspect(self, change_id, area, actor=None, room_url=None):
@@ -121,6 +175,8 @@ class Ripple:
             raise RippleError('Use an http or https chat reference')
         with self.state() as state:
             change = self._change(state, change_id)
+            if change['status'] in ('draft', 'complete', 'cancelled'):
+                raise RippleError('This request is not active. Resume a draft in Ripple before asking agents to inspect it.')
             files = {k: v for k, v in self.snapshot().items() if k.startswith(area + '/')}
             inspection = {'time': now(), 'actor': actor or 'local CLI', 'files': {k: v['sha256'] for k, v in files.items()}, 'room_url': room_url}
             change['inspections'][area] = inspection
@@ -140,7 +196,7 @@ class Ripple:
             raise RippleError('Findings must be short text strings')
         with self.state() as state:
             change = self._change(state, change_id)
-            if change['status'] in ('complete', 'cancelled') or change['applied']:
+            if change['status'] in ('draft', 'complete', 'cancelled') or change['applied']:
                 raise RippleError('Cannot revise proposals after application starts')
             if area not in change['inspections']:
                 raise RippleError('Inspect your workspace before proposing edits')
@@ -190,8 +246,8 @@ class Ripple:
             change = self._change(state, change_id)
             if set(change['proposals']) != set(AREAS):
                 raise RippleError('All three areas must submit a proposal before the combined check')
-            if change['status'] == 'cancelled':
-                raise RippleError('This change is cancelled')
+            if change['status'] in ('draft', 'cancelled'):
+                raise RippleError('Resume this request before checking its proposals')
             self._fresh(change)
             with tempfile.TemporaryDirectory(prefix='ripple-check-') as temp:
                 candidate = Path(temp)
@@ -270,12 +326,13 @@ class Ripple:
     def public_change(self, change):
         result = copy.deepcopy(change)
         result.pop('baseline', None)
+        result['can_save_as_draft'] = self._parkable(change)
         return result
 
     def status(self):
         from .switch import Switch
         with self.state() as state:
-            return {'api_version': 2, 'workspace_root': str(self.root), 'switch': Switch(self).public(), 'areas': AREAS, 'changes': [self.public_change(c) for c in state['changes']], 'events': state['events'], 'systems': self.systems(), 'transport': 'Switch HTTP receipts record real sends. Agent tool receipts describe workspace operations. The actual chat recording proves the complete human-agent interaction.'}
+            return {'api_version': 3, 'workspace_root': str(self.root), 'switch': Switch(self).public(), 'areas': AREAS, 'changes': [self.public_change(c) for c in state['changes']], 'events': state['events'], 'systems': self.systems(), 'transport': 'Switch HTTP receipts record real sends. Agent tool receipts describe workspace operations. The actual chat recording proves the complete human-agent interaction.'}
 
     def systems(self):
         snapshot = self.snapshot()

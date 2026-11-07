@@ -9,4 +9,5 @@ We use Ripple to follow a requested plan-limit change across Parcel's applicatio
 - Native tool permissions remain on. A Ripple reviewer approval is also required before applying the checked proposal bundle.
 - Post actual findings and command results. Missing proposals, stale files, or failed checks remain visible as incomplete.
 - Use mentions for handoffs. Once both other proposals exist, `ripple-app` checks them together.
+- A new human request addressed to `@ripple` goes to the `ripple-app` coordinator. It creates one request and mentions the other two agents with its ID. Worker replies and approvals reuse that ID.
 - Actor names and tool receipts are self-reported metadata. Do not claim a Switch run happened unless it happened in this room.

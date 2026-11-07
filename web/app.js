@@ -5,8 +5,9 @@ const token = $('meta[name="ripple-token"]').content;
 const areas = ['application', 'documentation', 'reporting'];
 const names = {application: 'Application', documentation: 'Documentation', reporting: 'Reporting'};
 const actors = {application: 'ripple-app', documentation: 'ripple-docs', reporting: 'ripple-report'};
-const labels = {discovering: 'Awaiting agents', ready_to_check: 'Ready to check', awaiting_approval: 'Your review needed', needs_revision: 'Revision needed', approved: 'Approved', applying: 'Applying edits', verifying: 'Verifying result', complete: 'Verified', verification_failed: 'Verification failed', cancelled: 'Cancelled'};
-let state, current, selectedId, tab = 'overview', refreshing = false, busy = false, toastTimer;
+const labels = {draft: 'Draft', discovering: 'Awaiting agents', ready_to_check: 'Ready to check', awaiting_approval: 'Your review needed', needs_revision: 'Revision needed', approved: 'Approved', applying: 'Applying edits', verifying: 'Verifying result', complete: 'Verified', verification_failed: 'Verification failed', cancelled: 'Cancelled'};
+const initialRoute = new URLSearchParams(location.hash.slice(1));
+let state, current, selectedId = initialRoute.get('change'), tab = initialRoute.get('tab') || 'overview', refreshing = false, busy = false, toastTimer;
 
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const titleCase = value => value.charAt(0).toUpperCase() + value.slice(1);
@@ -44,6 +45,7 @@ function setTab(value) {
     e.classList.toggle('active', e.dataset.tab === value);
     e.setAttribute('aria-selected', String(e.dataset.tab === value));
   });
+  if (current) history.replaceState(null, '', '#change=' + encodeURIComponent(current.id) + '&tab=' + encodeURIComponent(value));
   $('#breadcrumb-current').textContent = {overview: 'Overview', files: 'File changes', systems: 'Workspaces', activity: 'Activity'}[value];
 }
 async function refresh() {
@@ -55,7 +57,7 @@ async function refresh() {
     state = next;
     current = state.changes.find(c => c.id === selectedId) || [...state.changes].reverse().find(c => c.status !== 'cancelled') || null;
     if (current) selectedId = current.id;
-    $('#restart-notice').hidden = state.api_version === 2;
+    $('#restart-notice').hidden = state.api_version === 3;
     $('#local-server-state').textContent = 'Local workspace server available';
     if (changed) render();
   } catch (exc) {
@@ -65,12 +67,13 @@ async function refresh() {
 }
 function render() {
   renderHistory(); renderConnection(); renderChange(); renderSystems(); renderActivity();
+  setTab(['overview', 'files', 'systems', 'activity'].includes(tab) ? tab : 'overview');
 }
 function renderHistory() {
   const query = $('#history-search').value.toLowerCase();
   const changes = [...state.changes].reverse().filter(c => `${c.id} ${c.request} ${c.target.plan}`.toLowerCase().includes(query));
   $('#history-count').textContent = String(state.changes.length).padStart(2, '0');
-  $('#history').innerHTML = changes.length ? changes.map(c => `<button class="history-item ${c.id === current?.id ? 'selected' : ''}" data-change="${esc(c.id)}"><span class="status-dot ${c.status === 'complete' ? 'green' : c.status === 'cancelled' ? '' : 'orange'}"></span><span><strong>${esc(titleCase(c.target.plan))}: ${c.before} → ${c.target.limit} files</strong><small>${esc(c.id)} / ${esc(labels[c.status])}</small></span></button>`).join('') : '<p class="history-empty">No changes here yet.<br>Create a change to begin.</p>';
+  $('#history').innerHTML = changes.length ? changes.map(c => `<button class="history-item ${c.id === current?.id ? 'selected' : ''}" data-change="${esc(c.id)}"><span class="status-dot ${c.status === 'complete' ? 'green' : ['cancelled', 'draft'].includes(c.status) ? '' : 'orange'}"></span><span><strong>${esc(titleCase(c.target.plan))}: ${c.before} → ${c.target.limit} files</strong><small>${esc(c.id)} / ${esc(labels[c.status])}</small></span></button>`).join('') : '<p class="history-empty">No changes here yet.<br>Create a change to begin.</p>';
 }
 function renderConnection() {
   const c = connection();
@@ -92,6 +95,7 @@ function renderChange() {
   if (!c) return;
   $('#change-id').textContent = c.id;
   $('#change-title').textContent = `${titleCase(c.target.plan)} file limit: ${c.before} to ${c.target.limit}`;
+  $('#request-origin').textContent = c.origin === 'mattermost' ? 'From Mattermost' : 'Created in Ripple';
   $('#change-created').textContent = `Created ${time(c.created)}`;
   $('#change-status').textContent = labels[c.status] || c.status;
   $('#change-status').className = 'status-label ' + c.status;
@@ -121,7 +125,12 @@ function button(text, action, style = '') {return `<button class="button compact
 function renderNextStep() {
   const c = current, sw = connection(), r = receipt();
   let heading, detail, buttons, style = '', icon = '↗';
-  if (c.status === 'complete') {
+  if (c.status === 'draft') {
+    const active = state.changes.find(other => other.id !== c.id && !['draft', 'complete', 'cancelled'].includes(other.status));
+    heading = 'Saved as a draft.';
+    detail = active ? `${active.id} is active. This request stays in your ledger and can be resumed after that work finishes.` : 'Your request is preserved. Resume it when you are ready to send it to the agents.';
+    buttons = active ? `<button class="button compact" data-change="${esc(active.id)}">View active request ↗</button>` : button('Resume this request ↗', 'resume', 'accent');
+  } else if (c.status === 'complete') {
     heading = 'The change has reached every workspace.';
     detail = 'All three areas applied their edits. The final checks passed against actual files and application behavior.';
     buttons = button('Inspect the result ↗', 'systems', 'dark'); style = 'complete'; icon = '✓';
@@ -197,18 +206,32 @@ function renderActivity() {
   $('#live-feed').innerHTML = log.slice(0, 5).map(e => `<article class="feed-item ${e.kind.startsWith('switch_') ? 'transport' : ''}"><strong>${esc(e.actor)}</strong><p>${esc(e.message)}</p><time>${esc(time(e.time))}</time></article>`).join('') || '<p class="feed-empty">Real tool and transport activity will appear here as it happens.</p>';
   $('#activity-log').innerHTML = log.map(e => `<article class="activity-entry"><time>${esc(time(e.time))}</time><div><strong>${esc(e.actor)}</strong><span class="event-kind">${esc(e.kind)}</span><p>${esc(e.message)}</p>${e.room_id ? `<div class="event-transport-detail">ROOM ${esc(e.room_id)}${e.message_id ? `<br>MESSAGE ${esc(e.message_id)}` : ''}</div>` : ''}${safeURL(e.room_url) ? `<a class="text-button" href="${esc(safeURL(e.room_url))}" target="_blank" rel="noreferrer">Open reported room ↗</a>` : ''}</div></article>`).join('') || '<p class="feed-empty">No recorded activity for this change.</p>';
 }
-function newChange() {
-  const active = state.changes.find(c => !['complete', 'cancelled'].includes(c.status));
-  if (active) {
-    current = active; selectedId = active.id; render(); setTab('overview');
-    toast('Finish or cancel the active change before creating another.'); return;
+async function newChange() {
+  if (busy) return;
+  if (state.api_version !== 3) {
+    error('Restart the Ripple server once to enable saved drafts, then refresh this page.');
+    return;
   }
-  const plan = $('#plan').value, before = state.systems.application[plan].files_per_project;
-  const next = before < 100 ? Math.min(100, before + 5) : 95;
-  $('#limit').value = next;
-  $('#request').value = `Change the ${titleCase(plan)} plan's file limit from ${before} to ${next}. Update the application, current help documentation, and storage forecast. Keep the other plan unchanged.`;
-  $('#new-error').hidden = true; showDialog('new-dialog');
+  busy = true;
+  let saved = false;
+  try {
+    if (current?.can_save_as_draft) {
+      await api(`/api/changes/${current.id}/draft`, {});
+      saved = true;
+      await refresh();
+    }
+    const plan = $('#plan').value, before = state.systems.application[plan].files_per_project;
+    const next = before < 100 ? Math.min(100, before + 5) : 95;
+    $('#limit').value = next;
+    $('#request').value = `Change the ${titleCase(plan)} plan's file limit from ${before} to ${next}. Update the application, current help documentation, and storage forecast. Keep the other plan unchanged.`;
+    $('#request').dataset.generated = $('#request').value;
+    $('#new-error').hidden = true;
+    showDialog('new-dialog');
+    if (saved) toast('Previous request saved as a draft. Create your new request.');
+  } catch (exc) {error(exc);}
+  finally {busy = false;}
 }
+
 function connect() {
   const c = connection();
   $('#switch-server').value = c.server || '';
@@ -227,6 +250,7 @@ function manualPrompt() {
 }
 function handoff() {
   if (!current) return toast('Create a change first.');
+  if (current.status === 'draft') return toast('Resume this draft before sending it to the agents.');
   $('#handoff-message').value = manualPrompt();
   $('#handoff-feedback').textContent = 'Copy this message, then paste it into your actual Switch room.';
   showDialog('handoff-dialog');
@@ -244,6 +268,7 @@ async function runAction(action) {
       if (action === 'approve') toast('Approved. Send the approval to your Switch room.');
       if (action === 'cancel') toast('Cancelled before application. The record is preserved.');
       if (action === 'check') toast('Combined check finished. Review the actual results.');
+      if (action === 'resume') toast('Draft resumed. Send it to Switch when ready.');
     }
     await refresh();
   } catch (exc) {error(exc); await refresh();}
@@ -270,12 +295,23 @@ document.addEventListener('click', event => {
 $('#refresh').addEventListener('click', refresh);
 $('#history-search').addEventListener('input', renderHistory);
 $('#file-filter').addEventListener('change', renderFiles);
+function syncExampleDescription() {
+  const field = $('#request');
+  if (field.value !== field.dataset.generated) return;
+  const plan = $('#plan').value, before = state.systems.application[plan].files_per_project;
+  field.value = `Change the ${titleCase(plan)} plan's file limit from ${before} to ${$('#limit').value}. Update the application, current help documentation, and storage forecast. Keep the other plan unchanged.`;
+  field.dataset.generated = field.value;
+}
+$('#plan').addEventListener('change', syncExampleDescription);
+$('#limit').addEventListener('input', syncExampleDescription);
 $('#request-form').addEventListener('submit', async event => {
   event.preventDefault(); const submit = event.submitter; submit.disabled = true;
   try {
-    const result = await api('/api/changes', {request: $('#request').value, plan: $('#plan').value, limit: Number($('#limit').value)});
+    const statedPlan = $('#request').value.match(/(?:change|increase|raise|reduce|decrease|set|update)\s+(?:the\s+)?(basic|pro)(?:['’]s)?\s+(?:plan(?:['’]s)?\s+)?(?:file|upload)/i);
+    if (statedPlan && statedPlan[1].toLowerCase() !== $('#plan').value) throw new Error('The description and selected customer plan disagree. Make them match before creating the request.');
+    const result = await api('/api/changes', {request: $('#request').value, plan: $('#plan').value, limit: Number($('#limit').value), draft: submit.dataset.mode === 'draft'});
     selectedId = result.id; $('#new-dialog').close(); await refresh(); setTab('overview');
-    toast('Change saved. Use the next-step panel to dispatch it to Switch.');
+    toast(result.status === 'draft' ? 'Request saved as a draft in your ledger.' : 'Change created. Use the next-step panel to send it to Switch.');
   } catch (exc) {error(exc, '#new-error');} finally {submit.disabled = false;}
 });
 $('#switch-form').addEventListener('submit', async event => {

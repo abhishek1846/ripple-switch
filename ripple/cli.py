@@ -21,6 +21,11 @@ def main(argv=None):
     start.add_argument('--request', required=True)
     start.add_argument('--plan', choices=['basic', 'pro'], default='basic')
     start.add_argument('--limit', type=int, default=10)
+    intake = commands.add_parser('intake', help='Coordinator registers a real human request received in the Switch room')
+    intake.add_argument('--request', required=True)
+    intake.add_argument('--plan', choices=['basic', 'pro'], required=True)
+    intake.add_argument('--limit', type=int, required=True)
+    intake.add_argument('--message-id')
     for name in ['inspect', 'propose', 'apply']:
         command = commands.add_parser(name)
         command.add_argument('change')
@@ -50,7 +55,9 @@ def main(argv=None):
             key = getpass.getpass('Switch registration key (hidden, not saved): ')
             result = Switch(app).register(args.server, key, args.room, args.room_url)
         elif args.command == 'start':
-            result = app.start(args.request, args.plan, args.limit)
+            result = app.start(args.request, args.plan, args.limit, origin='cli')
+        elif args.command == 'intake':
+            result = app.start(args.request, args.plan, args.limit, origin='mattermost', source_message_id=args.message_id)
         elif args.command == 'inspect':
             result = app.inspect(args.change, args.area, args.actor, args.room_url)
         elif args.command == 'propose':

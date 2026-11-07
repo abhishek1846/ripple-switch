@@ -159,6 +159,8 @@ class Switch:
             change = self.app._change(state, change_id)
             if change['status'] in ('complete', 'cancelled'):
                 raise RippleError('This change is already closed')
+            if change['status'] == 'draft':
+                raise RippleError('Resume this draft in Ripple before sending it to the agents')
             if phase == 'approval' and not change['approval']:
                 raise RippleError('Review and approve the exact proposals first')
             dispatches = change.setdefault('dispatches', {})

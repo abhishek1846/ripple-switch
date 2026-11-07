@@ -167,8 +167,6 @@ class WorkflowTests(unittest.TestCase):
         self.assertFalse(self.app.check(self.cid)['passed'])
 
     def test_second_change_and_repeat_apply_are_handled(self):
-        with self.assertRaises(RippleError):
-            self.app.start('Another overlapping change', limit=8)
         self.prepare()
         self.app.check(self.cid)
         self.app.approve(self.cid)
@@ -179,6 +177,75 @@ class WorkflowTests(unittest.TestCase):
         self.assertEqual(len([e for e in self.app.status()['events'] if e['kind'] == 'applied']), 3)
         other = self.app.start('Increase Basic again', limit=12)
         self.assertEqual(other['before'], 10)
+
+    def test_new_request_preserves_the_unsent_request_as_a_draft(self):
+        before = self.app.snapshot()
+        newer = self.app.start('New request from the composer', limit=12)
+        changes = {c['id']: c for c in self.app.status()['changes']}
+        self.assertEqual(changes[self.cid]['status'], 'draft')
+        self.assertEqual(changes[self.cid]['request'], self.change['request'])
+        self.assertEqual(changes[newer['id']]['status'], 'discovering')
+        self.assertEqual(before, self.app.snapshot())
+        self.assertFalse(changes[self.cid]['inspections'])
+
+    def test_new_requests_can_be_drafted_while_agents_keep_working(self):
+        self.app.inspect(self.cid, 'application', actor='test fixture')
+        queued = self.app.start('Queued for later', limit=12)
+        another = self.app.start('Another draft', limit=15)
+        changes = {c['id']: c for c in self.app.status()['changes']}
+        self.assertEqual(changes[self.cid]['status'], 'discovering')
+        self.assertIn('application', changes[self.cid]['inspections'])
+        self.assertEqual(changes[queued['id']]['status'], 'draft')
+        self.assertEqual(changes[another['id']]['status'], 'draft')
+        with self.assertRaises(RippleError):
+            self.app.resume(queued['id'])
+
+    def test_save_draft_is_idempotent_and_can_be_resumed(self):
+        before = self.app.snapshot()
+        self.app.draft(self.cid)
+        self.app.draft(self.cid)
+        events = [e for e in self.app.status()['events'] if e['kind'] == 'draft_saved']
+        self.assertEqual(len(events), 1)
+        with self.assertRaises(RippleError):
+            self.app.inspect(self.cid, 'application')
+        resumed = self.app.resume(self.cid)
+        self.assertEqual(resumed['status'], 'discovering')
+        self.assertEqual(self.app.snapshot(), before)
+
+    def test_explicit_save_draft_does_not_pause_the_current_request(self):
+        draft = self.app.start('Keep this idea for later', limit=20, draft=True)
+        changes = {c['id']: c for c in self.app.status()['changes']}
+        self.assertEqual(changes[self.cid]['status'], 'discovering')
+        self.assertEqual(changes[draft['id']]['status'], 'draft')
+
+    def test_draft_rebases_on_current_files_before_execution(self):
+        self.app.draft(self.cid)
+        draft = self.app.start('Future Basic limit', limit=12, draft=True)
+        path = self.root / 'workspaces/application/plans.json'
+        plans = json.loads(path.read_text())
+        plans['basic']['files_per_project'] = 8
+        path.write_text(json.dumps(plans))
+        resumed = self.app.resume(draft['id'])
+        self.assertEqual(resumed['before'], 8)
+        self.assertEqual(resumed['target']['limit'], 12)
+        with self.app.state() as state:
+            stored = self.app._change(state, draft['id'])
+            self.assertEqual(stored['baseline']['application/plans.json']['content'], path.read_text())
+
+    def test_requests_with_agent_activity_cannot_be_silently_parked(self):
+        self.app.inspect(self.cid, 'application', actor='test fixture')
+        with self.assertRaises(RippleError):
+            self.app.draft(self.cid)
+        self.assertEqual(self.app.status()['changes'][0]['status'], 'discovering')
+
+    def test_chat_intake_is_one_record_per_actual_message_id(self):
+        request = self.app.start('Raise Basic to 10 from Mattermost', limit=10, origin='mattermost', source_message_id='room-1:message-1')
+        again = self.app.start('Raise Basic to 10 from Mattermost', limit=10, origin='mattermost', source_message_id='room-1:message-1')
+        self.assertEqual(request['id'], again['id'])
+        self.assertEqual(request['origin'], 'mattermost')
+        self.assertEqual(len(self.app.status()['changes']), 2)
+        with self.assertRaises(RippleError):
+            self.app.start('Changed interpretation', limit=12, origin='mattermost', source_message_id='room-1:message-1')
 
     def test_pro_plan_is_supported_without_changing_basic(self):
         self.app.cancel(self.cid)

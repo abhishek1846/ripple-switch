@@ -4,7 +4,9 @@ Target: 2 minutes 40 seconds. The form requires under 3 minutes on YouTube or Lo
 
 ## Current recording path
 
-The existing request is R-5514B6. No agent inspections or proposals have been recorded yet. Direct API dispatch is not configured on this checkout. Use Manual handoff to copy the exact request into the real Switch room, then use it again after approval to copy the approval message. The interface labels this as manual handoff, without claiming a verified direct API connection.
+The existing request is R-5514B6. All three agents have submitted proposals and its combined checks passed. It is awaiting human review. The actual Switch connection probe passed. Finish this request before resetting anything or restarting agent sessions. Direct dispatch can send the approval; Manual handoff is also available. A complete applied result still needs verification.
+
+For the preferred new-request recording, follow switch/CHAT-FIRST.md after the existing run finishes. Configure the @ripple alias and refresh agent instructions. Verify one real chat-first request before recording. Use a fresh checkout for a repeatable Basic 5-to-10 take rather than changing the active workspace behind the agents.
 
 On macOS, press Command+Shift+5, choose Record Selected Portion, frame your browser window, and choose your microphone under Options. Keep Ripple and the actual shared Switch room in two browser tabs. Record a complete take; trim quiet waiting or clearly mark it as sped up. Upload the finished video to YouTube or Loom, public or unlisted, under three minutes.
 
@@ -25,7 +27,7 @@ In Workspaces, show Basic at 5. Click the ten-sample-filenames check and show it
 
 ## 0:20-0:45 - One request
 
-Select the existing Basic 5-to-10 change. Choose Manual handoff, copy the request, and paste it into the actual shared Switch room containing ripple-app, ripple-docs, and ripple-report. Show the agent names and their real inspection replies.
+In the actual Mattermost room, type: `@ripple Increase the Basic plan's file limit from 5 to 10. Update the application, help docs, and storage forecast. Keep Pro unchanged.` Show the coordinator create one record and hand its ID to ripple-docs and ripple-report. Open its review link in Ripple when the proposals are ready. Use this sequence only after the chat-first setup and actual rehearsal succeed.
 
 "Switch gives each agent the same conversation while it works in its own context."
 
@@ -39,7 +41,7 @@ Show the actual combined check result, including any failure and revision if it 
 
 ## 1:25-1:55 - Human review and application
 
-Approve the exact checked edits in Ripple. Choose Open approval message, copy it, and paste it into that same chat. Show real agent application receipts. Keep any incomplete area visible until it finishes.
+Approve the exact checked edits in Ripple. Choose Send approval through the configured Switch connection, or copy Open approval message into that same chat. Show real agent application receipts. Keep any incomplete area visible until it finishes.
 
 ## 1:55-2:25 - Prove the result
 

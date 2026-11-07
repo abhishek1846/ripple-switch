@@ -56,6 +56,8 @@ room:
   bridge: "{bridge}"
   agents: [ripple-app, ripple-docs, ripple-report]
   users: ["{$creator}"]
+  aliases:
+    ripple-app: ripple
   instructions: |
     This is the Ripple change room. Each agent must read its own agents/AREA/AGENTS.md and agents/WORKFLOW.md. Inspect real files, prepare proposals through the CLI, and preserve unaffected plans and historical facts. ripple-app coordinates the combined check. The local reviewer approves the exact bundle in Ripple before any agent applies its edits. Post real results and use mentions for handoffs. Failed checks and incomplete areas are never reported as synchronized.
 kickoff: |

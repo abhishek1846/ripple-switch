@@ -6,7 +6,7 @@ A plan limit changes in team chat. The application, help guide, and capacity wor
 
 Built for the November 4-7, 2026 Flip the Switch Hackathon. Selected track: Best Business Workflow.
 
-Current status: nineteen workflow and transport tests and real Chromium interaction checks pass in [GitHub Actions](https://github.com/abhishek1846/ripple-switch/actions). A real Switch server, room, and model-agent run must still be connected and recorded. The direct HTTP transport is implemented and contract-tested; it has not yet been exercised against the user's live server.
+Current status: 26 local workflow and transport tests pass. Real Chromium checks run in [GitHub Actions](https://github.com/abhishek1846/ripple-switch/actions). The installed Switch connection has passed its actual connection probe. The first real request has inspections and proposals from all three agents and passed the combined checks. Human approval, actual application, and a recorded complete run remain pending. The new chat-first intake path still needs verification in the installed room.
 
 ## Run the local app
 
@@ -38,8 +38,8 @@ Switch is the shared conversation where people give the request, agents hand off
 
 ## Complete a change
 
-1. Choose New change in Ripple, then describe the change and select its plan and new limit. The structured target is explicit; this version does not pretend to interpret arbitrary natural-language changes.
-2. Choose Send to Switch to post the real request through the configured agent bridge. If direct dispatch is not configured, the next-step panel says so and offers the full manual handoff message. Each working agent inspects its files, prepares a patch, and submits it with the CLI.
+1. Follow [chat-first setup](switch/CHAT-FIRST.md), then ask in Mattermost: `@ripple Increase the Basic plan's file limit from 5 to 10. Update the application, help docs, and storage forecast. Keep Pro unchanged.` The coordinator interprets the supported plan-limit target, registers one request, and hands its ID to the other agents. Unsupported or ambiguous changes require clarification.
+2. Alternatively choose New change in Ripple. Customer plan means Parcel's Basic or Pro tier. New file limit means its maximum files per project. New preserves an unsent request as a draft. Requests created while agents are working remain separate drafts. Resume a draft before dispatch. Choose Send to Switch, or use Manual handoff if direct dispatch is unavailable. Each working agent inspects its files, prepares a patch, and submits it with the CLI.
 3. The application agent runs the combined check once all three proposals exist. Proposed files are assembled in a temporary directory. Live workspaces remain unchanged.
 4. Review the before/after file contents and check results in Ripple. Approve the exact checked bundle.
 5. Choose Send approval, or copy the manual approval message into the same room. Each agent applies its own proposal. The final application runs the checks against the actual updated workspaces.
