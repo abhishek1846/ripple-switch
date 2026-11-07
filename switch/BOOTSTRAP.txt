@@ -6,4 +6,6 @@ Use the version-1 template if my installed Console supports it. The directory pa
 
 Create or reuse exactly these agents: ripple-app, ripple-docs, ripple-report. All run from the project root with their distinct instructions in agents/application/AGENTS.md, agents/documentation/AGENTS.md, and agents/reporting/AGENTS.md. Keep normal provider permissions enabled. Use the room instructions from switch/ROOM.md. Agents owned by me should accept messages from me and my other agents.
 
-Start real sessions and put all three agents and me in one connected chat room. First smoke test: ask each agent to run python3 ripple.py status and report the actual Basic file limit. Stop and explain any unavailable provider, missing working directory, or disconnected bridge. Do not simulate success or fill in a fabricated conversation.
+Start real sessions and put all three agents and me in one connected chat room. First smoke test: ask each agent to run python3 ripple.py status and report the actual checkout root and available workspaces. Stop and explain any unavailable provider, missing working directory, or disconnected bridge. Do not simulate success or fill in a fabricated conversation.
+
+Set the room alias @ripple for ripple-app. New requests are free text: the coordinator registers one ID, every owner assesses impact, and only affected owners propose edits and acceptance checks. Read the current role files at each request. Preserve any existing active request and its approval state.

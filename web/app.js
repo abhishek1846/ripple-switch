@@ -19,7 +19,7 @@ const receipt = () => current?.dispatches?.[phase()];
 const general = c => c?.kind === 'general';
 const required = c => c?.required_areas || areas;
 const closed = c => ['no_changes', 'complete', 'cancelled'].includes(c.status);
-const shortRequest = c => c.request.split('\n')[0].slice(0, 85);
+const shortRequest = c => {const line = c.request.split('\n')[0]; const first = line.match(/^.*?[.!?](?:\s|$)/)?.[0].trim() || line; return first.length > 80 ? first.slice(0, 77).trimEnd() + '...' : first;};
 const changeTitle = c => general(c) ? shortRequest(c) : `${titleCase(c.target.plan)} file limit: ${c.before} to ${c.target.limit}`;
 const events = () => state?.events.filter(e => e.change === current?.id) || [];
 
@@ -107,7 +107,9 @@ function renderChange() {
   $('#change-request').textContent = c.request + (c.clarifications || []).map(item => '\nClarification: ' + item.answer).join('');
   $('#decision-numbers').hidden = general(c);
   $('#decision-text').hidden = !general(c);
-  $('#decision-text').textContent = c.request;
+  const assessedAreas = c.assessments || {}, affectedNames = required(c).map(a => names[a]);
+  $('#decision-heading').textContent = general(c) ? 'IMPACT' : 'THE DECISION';
+  $('#decision-text').textContent = Object.values(assessedAreas).some(a => a.outcome === 'blocked') ? 'Waiting for your answer in the Switch room.' : affectedNames.length ? affectedNames.join(' / ') + (affectedNames.length === 1 ? ' needs changes.' : ' need changes.') : Object.keys(assessedAreas).length === areas.length ? 'No workspace needs edits.' : 'Waiting for workspace assessments.';
   if (!general(c)) {
     $('#before-value').textContent = c.before;
     $('#after-value').textContent = c.target.limit;
@@ -124,7 +126,7 @@ function renderMap() {
   const c = current, sw = connection(), sent = c.dispatches?.request?.status === 'sent';
   const activity = Object.keys(c.inspections).length > 0;
   const switchLabel = sent ? 'Request accepted' : sw.connected ? 'Room verified' : sw.configured ? 'Connection unavailable' : 'Manual handoff';
-  $('#route-map').innerHTML = `<svg class="route-wires" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true"><path class="${sent ? 'dispatched' : ''}" d="M160 150 H440"/><path d="M440 150 H610 Q625 150 625 135 V69 Q625 54 640 54 H790"/><path d="M440 150 H790"/><path d="M440 150 H610 Q625 150 625 165 V231 Q625 246 640 246 H790"/></svg><div class="route-node decision-node"><span class="node-type">YOUR DECISION <span>↗</span></span><strong>${general(c) ? "Change requested" : esc(c.before + " → " + c.target.limit + " files")}</strong><small>${esc(general(c) ? c.request.slice(0, 65) : titleCase(c.target.plan) + " plan")}</small></div><button class="route-node switch-node" data-action="connect"><span class="node-type">SHARED ROOM <span>↔</span></span><strong>Switch</strong><small>${esc(switchLabel)}</small></button>${areas.map(area => {
+  $('#route-map').innerHTML = `<svg class="route-wires" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true"><path class="${sent ? 'dispatched' : ''}" d="M160 150 H440"/><path d="M440 150 H610 Q625 150 625 135 V69 Q625 54 640 54 H790"/><path d="M440 150 H790"/><path d="M440 150 H610 Q625 150 625 165 V231 Q625 246 640 246 H790"/></svg><div class="route-node decision-node"><span class="node-type">YOUR DECISION <span>↗</span></span><strong>${general(c) ? "Change requested" : esc(c.before + " → " + c.target.limit + " files")}</strong><small>${esc(general(c) ? shortRequest(c).length > 45 ? shortRequest(c).slice(0, 42).trimEnd() + '...' : shortRequest(c) : titleCase(c.target.plan) + " plan")}</small></div><button class="route-node switch-node" data-action="connect"><span class="node-type">SHARED ROOM <span>↔</span></span><strong>Switch</strong><small>${esc(switchLabel)}</small></button>${areas.map(area => {
     const proposed = c.proposals[area], inspected = c.inspections[area], applied = c.applied[area];
     const assessment = c.assessments?.[area];
     const status = assessment?.outcome === 'unaffected' ? 'Unaffected' : assessment?.outcome === 'blocked' ? 'Question for you' : applied ? 'Applied to workspace' : proposed ? `${proposed.files.length} file edits proposed` : inspected ? 'Inspection received' : 'No tool activity yet';
@@ -196,7 +198,7 @@ function renderNextStep() {
 }
 function renderImpact() {
   const c = current, assessments = c.assessments || {};
-  $('#impact-summary').textContent = general(c) ? `${Object.keys(assessments).length} assessed / ${required(c).length} affected` : `${Object.keys(c.proposals).length} of 3 areas proposed edits`;
+  $('#impact-summary').textContent = general(c) ? Object.keys(assessments).length < areas.length || Object.values(assessments).some(a => a.outcome === 'blocked') ? `${Object.keys(assessments).length} assessed / impact discovery open` : `${Object.keys(assessments).length} assessed / ${required(c).length} affected` : `${Object.keys(c.proposals).length} of 3 areas proposed edits`;
   $('#impact-list').innerHTML = areas.map((area, i) => {
     const p = c.proposals[area], inspection = c.inspections[area], applied = c.applied[area], assessment = assessments[area];
     const summary = p?.summary || assessment?.reason || (inspection ? 'Inspection received. Waiting for the impact assessment.' : 'The agent has not inspected this workspace yet.');

@@ -80,7 +80,18 @@ def verify_general(directory, change):
                 text = (directory / area / condition['path']).read_text()
                 if not evaluate(text, condition):
                     raise ValueError('Expected condition was not met: ' + json.dumps(condition))
-                return json.dumps(condition, ensure_ascii=False)
-            record(f'{area}: acceptance {i + 1} / {condition["path"]}', acceptance)
+                expected = json.dumps(condition['value'], ensure_ascii=False)
+                if len(expected) > 300:
+                    expected = expected[:297] + '...'
+                kind = condition['kind']
+                if kind == 'contains':
+                    return f"Includes {expected}."
+                if kind == 'not_contains':
+                    return f"No longer contains {expected}."
+                if kind == 'json_equals':
+                    return f"{condition['pointer']} equals {expected}."
+                selector = ', '.join(f'{k} = {v}' for k, v in condition['where'].items())
+                return f"The row where {selector} has {condition['column']} = {expected}."
+            record(f'{area}: {condition["path"]}', acceptance)
     return {'passed': bool(checks) and all(c['passed'] for c in checks), 'checks': checks,
             'scope': 'Checks validate agent-declared acceptance conditions and file integrity. Review their coverage of the request before approving.'}

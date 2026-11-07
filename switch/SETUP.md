@@ -1,6 +1,8 @@
-# Connect the real Switch room
+# Connect the Switch room
 
-The local app uses Python 3.9+ and needs no API key. Switch runs the model through an installed provider. On Abhishek's Mac, Codex is installed and logged in using ChatGPT. A live Switch run has not yet been verified.
+Updated: 2026-11-07
+
+Ripple uses Python 3.9+ and needs no model API key itself. Switch runs agents through a configured coding provider. The original installed request has checked proposals; the updated general flow needs native rehearsal.
 
 ## Install and start Console
 
@@ -30,9 +32,9 @@ Create one room containing you and all three agents. Use `switch/ROOM.md` as its
 
 ## Smoke test before the demo
 
-In the actual messaging app, mention each agent and ask it to run `python3 ripple.py status`. It should report the current Basic limit, initially 5. Check the actual terminal tool output if available. Do not proceed on the strength of a generic greeting.
+In the actual messaging app, mention each agent and ask it to run `python3 ripple.py status`. It should report the checkout root and available workspaces from the command output. Check the actual terminal tool output if available. Do not proceed on the strength of a generic greeting.
 
-Once all three can run commands, start the local Ripple page, create a change, and copy its agent request into this same chat. See `DEMO.md` for the recording sequence.
+Once all three can run commands, follow switch/CHAT-FIRST.md to configure @ripple and start a free-text request in the chat. The dashboard also supports request creation and dispatch. See DEMO.md for the recording sequence.
 
 When an agent is silent, check its thread, exact mention, provider, live session, working directory, and owner identity. Use the installed Console's agent status view or documented `!agents-status` room command. Share the actual error for troubleshooting. Do not reset the room or enable permission bypass to make it appear to work.
 

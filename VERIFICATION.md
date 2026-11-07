@@ -10,7 +10,7 @@ Observed November 7, 2026.
 - Negative tests catch stale onboarding, incorrect forecast values, unintended changes to another plan, stale file inspections, intervening human edits, invalid paths, premature application, and reused approvals after a proposal changes.
 - Repeat application is idempotent. Missing areas remain incomplete.
 - A Pro-only change also passes without altering Basic.
-- Earlier published revisions passed 19 tests and real Chromium checks. The draft revision passed browser run 42373123195 on 59bed47dc3df2288320d58b0abdfae6394d88fa3. Browser coverage for the general request revision is being run separately.
+- Earlier published revisions passed 19 tests and real Chromium checks. The draft revision passed browser run 42373123195 on 59bed47dc3df2288320d58b0abdfae6394d88fa3. General request browser run [42375088495](https://github.com/abhishek1846/ripple-switch/actions/runs/42375088495) passed on da61be24a29b780d804ec3ff5dfaa5d5d06b02d4. It exercised free-text creation, drafts/resume, a two-area rename with an unaffected report, selective approval and application, a one-area new guide, legacy application behavior, and mobile layout. Five screenshots are retained; its overview preview was visually inspected. The subsequent title/check wording pass is being checked separately.
 - Static HTML checks confirmed unique element IDs and existing local asset references.
 
 These are software tests with deterministic fixtures. They do not establish AI-agent execution or a working Switch connection.
