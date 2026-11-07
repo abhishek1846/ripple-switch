@@ -177,6 +177,8 @@ class Switch:
                 receipt.update({'status': 'sent', 'http_status': http_status, 'message_id': str(message_id)[:200] if message_id else None, 'message': 'Switch accepted the message. Waiting for actual agent tool activity.'})
             except RippleError as exc:
                 receipt.update({'status': 'failed', 'message': str(exc)})
+            connection_state = {'tested': True, 'tested_at': now(), 'connected': receipt['status'] == 'sent', 'status': 'connected' if receipt['status'] == 'sent' else 'unavailable', 'message': 'Switch accepted a message for this room. Working agent sessions are not verified by this receipt.' if receipt['status'] == 'sent' else receipt['message'], 'checks': [{'name': 'Message accepted by Switch' if receipt['status'] == 'sent' else receipt['message'], 'passed': receipt['status'] == 'sent'}]}
+            self.app._atomic(self.check_path, json.dumps(connection_state))
             dispatches[phase] = receipt
             self.app.event(state, 'switch_sent' if receipt['status'] == 'sent' else 'switch_failed', change_id, 'Switch dispatch', receipt['message'], phase=phase, room_id=config['room_id'], message_id=receipt.get('message_id'), room_url=config.get('room_url'))
             return receipt

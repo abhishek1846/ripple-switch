@@ -73,10 +73,12 @@ class SwitchTests(unittest.TestCase):
         with patch('ripple.switch.request_json', side_effect=RippleError('Server is unavailable')):
             failed = self.bridge.dispatch(cid)
         self.assertEqual(failed['status'], 'failed')
+        self.assertFalse(self.bridge.public()['connected'])
         self.assertEqual(self.app.status()['events'][-1]['kind'], 'switch_failed')
         with patch('ripple.switch.request_json', return_value=(200, {'id': 'retry-id'})):
             sent = self.bridge.dispatch(cid)
         self.assertEqual(sent['status'], 'sent')
+        self.assertTrue(self.bridge.public()['connected'])
         self.assertFalse(self.app.status()['changes'][0]['proposals'])
         with self.assertRaises(RippleError):
             self.bridge.dispatch(cid, phase='approval')
