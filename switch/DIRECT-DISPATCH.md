@@ -1,12 +1,12 @@
 # Send directly from Ripple to Switch
 
-Updated: 2026-11-07
+Updated: 2026-11-08
 
-The Send to Switch button uses the documented agent bridge: `POST /agents/{agent_id}/message` with `room_id` and `content`. It records the actual HTTP response and message ID when Switch returns one. It does not launch a model itself or invent a reply. The three working agent sessions must be running in Console.
+The Send to Switch button uses the documented agent bridge: `POST /agents/{agent_id}/message` with `room_id` and `content`. It records the actual HTTP response and message ID when Switch returns one. It does not launch a model itself or invent a reply. The configured working agent sessions must be running in Console.
 
 ## Set up the dispatch identity
 
-First create the three working agents and the connected room using SETUP.md. Use the same Switch account for these agents and the dispatch identity so owner-agents addressing permits the handoff.
+Create your configured working agents and a connected room. SETUP.md shows the included example. Use the same Switch account for these agents and the dispatch identity so owner-agents addressing permits the handoff.
 
 In Switch's Gateway, open API Keys and create a registration key. The registration key creates the dispatch identity; it is not the agent key used for subsequent messages.
 
@@ -34,8 +34,8 @@ If you already have a dedicated dispatch agent and its API key, enter those deta
 
 Successful sends are idempotent per phase and checked approval bundle. Failed sends can be retried. A timeout can occur after the server accepts a message; inspect the real room before retrying an uncertain outcome. The current client does not implement a server-side idempotency key.
 
-Credentials remain in ignored local runtime state with file mode 0600. They are absent from the public state API, receipts, source packages, and repository. Keep connection forms and secret prompts out of the recording.
+Credentials remain in ignored local runtime state with file mode 0600. They are absent from the public state API, receipts, source packages, and repository.
 
 Protocol source: https://docs.switchagents.ai/switch-rooms/internals/agent-protocol
 
-Native release compatibility and a real room run must still be verified. Manual handoff remains available if the installed server does not expose these documented routes.
+Manual handoff remains available if the installed server does not expose these documented routes.

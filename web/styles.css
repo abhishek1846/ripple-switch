@@ -25,3 +25,37 @@
 .workspace-source {margin-top:12px; border-top:1px solid var(--line); padding-top:12px; min-width:0}
 .workspace-source summary {cursor:pointer; font-size:12px; overflow-wrap:anywhere}
 .workspace-source pre {white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; line-height:1.6; max-height:420px; overflow:auto}
+
+/* Put the changed lines first. Complete file contents remain available. */
+.unified-diff {overflow:auto; border-top:1px solid var(--line)}
+.unified-diff pre {margin:0; padding:12px 0; font:12px/1.7 var(--mono); white-space:pre; max-height:560px}
+.diff-line {display:block; padding:0 16px; min-height:1.7em; width:max-content; min-width:100%}
+.diff-line.added {background:#e5f0e1; color:#25451e}
+.diff-line.removed {background:#fbe7e3; color:#7e2e23}
+.diff-line.hunk {background:#e9eef4; color:#344d6b}
+.diff-line.header {font-weight:600}
+.full-file-contents {border-top:1px solid var(--line)}
+.full-file-contents>summary {font-size:12px; color:var(--ink)}
+.request-quote,.step-copy p,.impact-detail,.check-scope,.check-row p,.form-note {color:#535b4b}
+#mobile-history-toggle {display:none}
+@media(max-width:720px) {
+  #mobile-history-toggle {display:block; margin:0}
+  .rail {flex-wrap:wrap}
+  .rail.history-open .rail-section-title,.rail.history-open .history-search,.rail.history-open #history {display:block; flex-basis:100%; width:100%}
+  .rail.history-open #history {max-height:40vh; overflow:auto}
+}
+
+/* Workspace layout follows configuration, independent of agent count. */
+.route-map.configured-route {display:grid; grid-template-columns:minmax(130px,1fr) minmax(0,3fr); gap:20px; height:auto; padding:20px 0; min-height:180px}
+.configured-route .route-node {position:static; transform:none; width:auto; min-width:0; inset:auto; padding:14px}
+.configured-route .decision-node strong {font-size:17px; line-height:1.4; overflow-wrap:anywhere}
+.route-source {display:grid; align-content:center; gap:14px}
+.route-workspaces {display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; align-content:center}
+.workspace-node .node-type {white-space:normal; overflow-wrap:anywhere}
+.workspace-group {margin-bottom:24px}
+.workspace-group h3 {font-size:15px; margin-bottom:4px}
+@media(max-width:720px) {
+  .route-map.configured-route {grid-template-columns:1fr}
+  .route-source {grid-template-columns:1fr 1fr}
+  .route-workspaces {grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+}

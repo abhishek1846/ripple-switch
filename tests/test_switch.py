@@ -17,6 +17,7 @@ class SwitchTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         shutil.copytree(SOURCE / 'workspaces', self.root / 'workspaces', ignore=shutil.ignore_patterns('__pycache__'))
+        shutil.copyfile(SOURCE / 'ripple.json', self.root / 'ripple.json')
         self.app = Ripple(self.root)
         self.bridge = Switch(self.app)
         self.config = {'server': 'http://127.0.0.1:8000', 'agent_id': 'relay-id', 'room_id': 'room-id', 'api_key': 'test-secret-not-a-real-key', 'room_url': 'http://localhost:8065/team/channels/ripple'}

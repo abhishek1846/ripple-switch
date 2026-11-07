@@ -1,88 +1,81 @@
-# How Ripple agents work
+# Ripple agent workflow
 
-Updated: 2026-11-07
+Updated: 2026-11-08
 
-Work from the Ripple checkout root. Read your role file. Use the actual request ID from the coordinator. Actor labels and optional room URLs are caller-supplied trace metadata.
+Use the company's configured project root and workspace identifiers from `ripple.json`. Its optional agent roster records responsibilities and instruction paths. Agents and workspaces are independent: an agent can cover several workspaces, and several agents can share one workspace. The role files under `agents/application`, `agents/documentation`, and `agents/reporting` belong to the bundled example.
 
-## Discover impact
+Run commands from the project directory. Prefix the commands below with `python3 /absolute/path/to/ripple/ripple.py`, or use `python3 ripple.py` when working in the Ripple source checkout. From another directory, add `--root /absolute/project/path` before the command. Actor labels are caller-supplied trace metadata, not authentication.
 
-1. Run `python3 ripple.py inspect CHANGE_ID AREA --actor ACTOR`.
-2. Read the original request, any clarifications, and the returned file contents. Inspect the workspace before declaring it affected or unaffected.
-3. For `kind: general`, record one outcome:
+## Inspect and assess
 
-```bash
-python3 ripple.py assess CHANGE_ID AREA --outcome affected --reason "The current guide names the product being renamed." --actor ACTOR
-python3 ripple.py assess CHANGE_ID AREA --outcome unaffected --reason "These numeric capacity inputs and calculations contain no product-name references." --actor ACTOR
-python3 ripple.py assess CHANGE_ID AREA --outcome blocked --reason "Which name should appear in customer-facing references?" --actor ACTOR
+Create a request through the dashboard, CLI `start --request "..."`, or your Switch coordinator. Reuse the actual returned ID. Creating a request does not launch agents. A queued draft must be resumed before work begins.
+
+For each workspace you are assigned:
+
+```text
+inspect CHANGE_ID AREA --actor YOUR_AGENT_NAME
+assess CHANGE_ID AREA --outcome affected --reason "Your finding" --actor YOUR_AGENT_NAME
 ```
 
-Use your actual finding. These commands are alternatives. An unaffected owner posts its reason and stops. A blocked owner asks the human in the room. The coordinator records the actual answer with `python3 ripple.py clarify CHANGE_ID --answer "THE HUMAN ANSWER" --actor ripple-app`, then requests fresh inspections and assessments. Clarification invalidates earlier proposals and approval.
+Read the actual request, clarifications, and returned files before assessing. The alternatives to `affected` are `unaffected` and `blocked`.
 
-Every connected workspace assesses the request. Only affected workspaces submit edits. The backend enforces this distinction. Do not generate empty patches to satisfy a three-agent quota.
+Every configured workspace needs one assessment. Unaffected workspaces need no patch. If details are missing, record a blocked question and ask the human. Record the actual answer with `clarify CHANGE_ID --answer "The human's answer"`. Clarification resets inspections, assessments, proposals, checks, and approval so agents can reassess the updated request.
 
-## Propose and check
+If several agents share a workspace, coordinate that workspace's current proposal. Do not generate duplicate patches or empty patches to satisfy an agent quota.
 
-An affected owner writes JSON under `.ripple/drafts/`. Do not edit live workspace files while preparing it. Use `json.dumps` so file text has correct JSON escapes.
+## Propose changes
+
+Prepare a JSON file under the project's `.ripple/drafts/`. Do not edit live workspace files while preparing it. Paths inside the patch are relative to the selected workspace:
 
 ```json
 {
-  "findings": ["The current customer guide uses the old product name."],
+  "findings": ["The current guide describes the old policy."],
   "files": [
     {
-      "path": "plans.md",
+      "path": "guides/policy.md",
       "before_sha256": "HASH_FROM_INSPECTION",
       "content": "COMPLETE_RESULTING_FILE_TEXT"
     }
   ],
   "checks": [
-    {"path": "plans.md", "kind": "contains", "value": "Relay"},
-    {"path": "plans.md", "kind": "not_contains", "value": "Parcel"}
+    {"path": "guides/policy.md", "kind": "contains", "value": "New policy"},
+    {"path": "guides/policy.md", "kind": "not_contains", "value": "Old policy"}
   ]
 }
 ```
 
-Paths are relative to your area. Supported text files may be added with `before_sha256: null`. Existing files require their inspected hash. Deletion is not supported. Documentation archive files and reporting/accounts.csv are protected. Preserve unrelated content.
+Use the inspected hash for existing files and `before_sha256: null` for a new text file. Deletion is not supported. Follow the workspace's protected patterns. Preserve unrelated content. `ripple.json` is control configuration and cannot be changed through a workspace proposal.
 
-General proposals require request-specific acceptance conditions. At least one must fail against the original version of a changed file. Supported conditions:
+Submit the resulting file contents with:
 
-- `contains` / `not_contains`: path and nonempty string value.
-- `json_equals`: path, JSON pointer such as `/basic/files_per_project`, and typed value.
-- `csv_equals`: path, string-valued row selector `where`, column, and string value. Exactly one row must match.
-
-For example:
-
-```json
-{"path":"plans.json","kind":"json_equals","pointer":"/basic/files_per_project","value":10}
+```text
+propose CHANGE_ID AREA --patch .ripple/drafts/YOUR_PATCH.json --summary "Describe the outcome" --actor YOUR_AGENT_NAME
 ```
 
-```json
-{"path":"forecast.csv","kind":"csv_equals","where":{"plan":"basic"},"column":"capacity_gib","value":"7.81"}
-```
+A new submission replaces that workspace's previous proposal and revokes checks and approval. There is one current proposal per workspace, regardless of how many agents collaborate on it.
 
-Conditions must cover the intended edits and important preservation requirements. Ripple runs the conditions and checks changed JSON/Python/CSV structure. It does not establish that an agent's conditions fully describe an arbitrary natural-language request. The human reviews that coverage.
+General proposals require acceptance conditions. At least one condition must detect a change from the original version of a changed file. Supported kinds:
 
-Submit:
+- `contains` and `not_contains`: file path and nonempty text `value`.
+- `json_equals`: file path, JSON `pointer`, and expected typed `value`.
+- `csv_equals`: file path, string-valued row selector `where`, `column`, and string `value`. One row must match.
 
-```bash
-python3 ripple.py propose CHANGE_ID AREA --actor ACTOR --patch .ripple/drafts/YOUR_FILE.json --summary "Describe the proposed outcome"
-```
+Conditions should cover the requested outcome and preservation requirements. Ripple checks file integrity and parses changed Python, JSON, and CSV. It does not establish that your conditions fully describe a natural-language request. Run appropriate project tests separately and explain that evidence to the reviewer.
 
-Post your findings in the Switch room and mention @ripple-app. When every assessment is present, no question is blocked, and all affected owners have proposals, the coordinator runs `python3 ripple.py check CHANGE_ID`. Live files stay unchanged. If the check fails, the responsible owner revises its proposal. Each revision revokes previous approval.
+## Check, approve, and apply
 
-## Human review and application
+When all workspaces have assessments, no questions remain blocked, and affected workspaces have proposals, run `check CHANGE_ID`. Live files remain unchanged during candidate checks.
 
-The coordinator returns `http://127.0.0.1:8790/#change=CHANGE_ID&tab=files` and the check result. The human reviews the changes and acceptance coverage in Ripple, then approves. The human sends the approval through Switch using direct dispatch or Manual handoff.
+The person reviews highlighted diffs, complete file contents, and acceptance coverage in the dashboard. Return a link using the dashboard's actual port, for example `http://127.0.0.1:8790/#change=CHANGE_ID&tab=files`. Wait for approval. Never approve for the human.
 
-Only affected owners apply their own checked proposal:
+Apply only affected workspaces with `apply CHANGE_ID AREA --actor YOUR_AGENT_NAME`. The last affected application checks a fresh snapshot of the resulting files. Read the result before reporting completion. A failed or partial result remains incomplete.
 
-```bash
-python3 ripple.py apply CHANGE_ID AREA --actor ACTOR
-```
+Use your existing CLI coordination or your configured Switch room. Ripple's handoff messages derive agent names and workspace assignments from configuration. Successful dispatch is not proof that agents have acted. Keep normal provider permissions enabled.
 
-The last affected application runs the recorded checks on the updated files. Read the result. Missing, stale, blocked, or failed work remains incomplete. Never approve for the human or claim completion from message delivery alone.
+## Recovery and older requests
 
-Use native provider permission requests. Do not enable permission bypass. Role assignments are not filesystem isolation; Ripple enforces proposal boundaries and reviewer approval.
+Ripple journals an area before writing its files. After an interruption, the next CLI or dashboard operation recovers unfinished writes before continuing. Completed areas remain applied. Conflicting outside edits are preserved and reported for reconciliation. Read the recovered status before retrying. Do not delete runtime state or recreate a request to clear an error.
 
-## Existing plan-limit requests
+New requests bind the workspace configuration used for review. Changing its paths or protections requires reconciliation before that request can continue. Agent roster size does not define the number of required workspace proposals.
 
-A request without `kind: general`, including the existing R-5514B6, uses the original plan-limit workflow. Inspect and propose each of the three areas. Assessments and declarative checks are not required for these older records. The independent Parcel verifier checks the exact target and preserved plan, validator behavior, current guides, historical facts, and forecast calculation. Preserve existing approval and do not recreate a legacy request merely to use the new flow.
+Older plan-limit records retain the example's original independent checks and three-workspace workflow. Reuse their IDs and checked approval bundles. Do not add general assessments or recreate them merely to use the new flow.

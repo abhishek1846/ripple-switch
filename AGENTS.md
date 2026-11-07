@@ -1,17 +1,19 @@
 # Ripple
 
-Updated: 2026-11-07
+Updated: 2026-11-08
 
 Follow Abhishek's writing instructions in /Users/abhisheksingh/AGENTS.md.
 
-Ripple coordinates one requested change across three local working systems through real Switch agents. Never invent a Switch conversation or label a deterministic example as an agent run.
+Ripple coordinates reviewed changes across company-configured workspaces. Agents and workspaces are separate concepts. Do not impose a fixed agent count or mandatory department names. The supplied Parcel configuration and Switch template are examples.
 
-- Run `python3 ripple.py --help` for tools.
-- Each agent owns one area: application, documentation, or reporting. General requests require impact assessments from each owner and proposals only from affected owners. Existing plan-limit records keep their legacy workflow.
-- Read your corresponding `agents/<area>/AGENTS.md` before working.
-- Inspect actual files. Propose changes through the CLI. Do not edit live workspace files directly.
-- The human approves the exact checked proposals. Only then apply your area's proposal.
-- Agent roles are instructions. CLI proposal boundaries are enforced by Ripple, not an operating-system sandbox.
+- Read ripple.json to discover the project, workspaces, agent roster, and optional coordinator. Follow any configured instructions for your role.
+- Run `python3 ripple.py --help` for tools. Read agents/WORKFLOW.md for the proposal protocol.
+- Inspect actual files. General requests require an impact assessment for each workspace and proposals only for affected workspaces. Agents sharing a workspace coordinate one current proposal.
+- Propose changes through the CLI. Do not edit live workspace files while preparing a proposal.
+- The human approves the checked proposals before application. Proposal revisions revoke approval.
+- Existing plan-limit records retain their legacy example workflow and approval bundles.
+- Agent labels are trace metadata. CLI file boundaries are enforced by Ripple, not an operating-system sandbox.
+- Never invent a Switch conversation or label deterministic test fixtures as an agent run.
 - Keep secrets and runtime data out of source packages.
 
-Validation: `python3 -m unittest discover -s tests -v` and `node --check web/app.js`.
+Validation: `python3 -m unittest discover -s tests -v`, `node --check web/app.js`, and `node --check tests/browser.mjs`. Browser verification uses `npm run test:browser` with Playwright installed.

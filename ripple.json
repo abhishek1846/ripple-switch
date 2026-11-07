@@ -1,0 +1,51 @@
+{
+  "name": "ripple-example",
+  "workspaces": {
+    "application": {
+      "path": "workspaces/application",
+      "title": "Application",
+      "description": "Product configuration and server behavior"
+    },
+    "documentation": {
+      "path": "workspaces/documentation",
+      "title": "Documentation",
+      "description": "Customer guides and reference documents",
+      "protected": [
+        "archive/**"
+      ]
+    },
+    "reporting": {
+      "path": "workspaces/reporting",
+      "title": "Reporting",
+      "description": "Operational assumptions and generated reports",
+      "protected": [
+        "accounts.csv"
+      ]
+    }
+  },
+  "example": "parcel",
+  "coordinator": "ripple-app",
+  "agents": {
+    "ripple-app": {
+      "title": "Application agent",
+      "workspaces": [
+        "application"
+      ],
+      "instructions": "agents/application/AGENTS.md"
+    },
+    "ripple-docs": {
+      "title": "Documentation agent",
+      "workspaces": [
+        "documentation"
+      ],
+      "instructions": "agents/documentation/AGENTS.md"
+    },
+    "ripple-report": {
+      "title": "Reporting agent",
+      "workspaces": [
+        "reporting"
+      ],
+      "instructions": "agents/reporting/AGENTS.md"
+    }
+  }
+}

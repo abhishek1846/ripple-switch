@@ -2,16 +2,21 @@ import importlib.util
 import json
 import secrets
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
 from urllib.parse import urlparse
 
 from .core import RippleError
 
 
 def validate_files(app, data):
+    if app.example != 'parcel':
+        raise RippleError('Selection validation belongs to the included Parcel example')
     files = data.get('files')
     if not isinstance(files, list) or len(files) > 200 or not all(isinstance(f, str) and len(f) < 1000 for f in files):
         raise RippleError('Provide a list of at most 200 filenames')
-    path = app.workspaces / 'application/limits.py'
+    path = app.area_path('application') / 'limits.py'
+    if not path.is_file():
+        raise RippleError('Selection validation is available for the included application with limits.py')
     spec = importlib.util.spec_from_file_location('parcel_live_limits', path)
     module = importlib.util.module_from_spec(spec)
     # Read source explicitly to avoid same-second .pyc cache staleness after an edit.
@@ -49,7 +54,7 @@ def mutate(app, path, data):
 
 def serve(app, port=8790):
     token = secrets.token_urlsafe(32)
-    web = app.root / 'web'
+    web = Path(__file__).resolve().parents[1] / 'web'
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, fmt, *args):

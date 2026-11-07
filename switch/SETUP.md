@@ -1,43 +1,56 @@
 # Connect the Switch room
 
-Updated: 2026-11-07
+Updated: 2026-11-08
 
-Ripple uses Python 3.9+ and needs no model API key itself. Switch runs agents through a configured coding provider. The original installed request has checked proposals; the updated general flow needs native rehearsal.
+This guide configures the included Parcel example. Its three agents and their names are example choices. Use your own roster and workspace assignments from ripple.json for another project.
 
-## Install and start Console
+Ripple uses Python 3.9+ on macOS or Linux. The agent workflow also needs Switch Console, a configured coding provider, and a connected messaging app. All agents and the Ripple server must use the same checkout root.
 
-1. Download the Apple silicon DMG from [Switch's official install page](https://docs.switchagents.ai/switch-rooms/getting-started/install-switch-console).
-2. Open it, drag Switch Console into Applications, and launch that copy.
-3. Follow the actual installed setup screens. The current quickstart says Get started, On this computer, then Start. If the release instead asks to configure a local server or install Docker, follow that screen. Do not assume the latest docs exactly match the release.
-4. Confirm the server is running. Select Codex as the provider and confirm it is signed in. Keep Console running.
-5. If a Switch helper chat is available, paste `switch/BOOTSTRAP.txt`. It asks the helper to inspect real setup and create the workflow.
+## Start Console
 
-## Create the agents and room
+1. Install [Switch Console](https://docs.switchagents.ai/switch-rooms/getting-started/install-switch-console) for your supported platform.
+2. Follow Console's setup to start or connect to a Switch server. Keep Console running.
+3. Configure a coding provider, such as Codex, on the machine that will run the agents. Confirm that the provider is installed and signed in.
+4. Connect your messaging app through Console. The supplied workflow uses Mattermost. A room entry in Console alone does not confirm that messages can reach it.
 
-Recommended: use the Console's Templates area to load `switch/ripple.template.yaml`. Enter your absolute Ripple checkout path for `directory`, Codex for `provider`, this computer for `location`, and the actual connected chat for `bridge`. The template follows the current documented format but must pass the native validator and be run in the installed release. If names already exist, inspect and reuse them rather than deleting unknown agents.
+If you use a Switch helper agent for setup, give it [BOOTSTRAP.txt](BOOTSTRAP.txt) and the absolute checkout path.
 
-Manual fallback: create three custom agents under Your Agents. All use the absolute Ripple checkout root as their working directory. Keep provider permission bypass off. For each agent, use its matching role instructions:
+## Create the owners and room
 
-| Name | Read as its standing instructions |
+In Console's Templates area, import [ripple.template.yaml](ripple.template.yaml). Set `directory` to the absolute checkout root containing `ripple.py`, `agents/`, and `ripple.json`. Choose your provider, the machine running the checkout, and your connected chat bridge.
+
+Validate and run the template in your installed Console. [Switch's template guide](https://docs.switchagents.ai/switch-rooms/administer/room-templates) explains importing and running templates. If agent names already exist, inspect and reuse them rather than deleting or replacing unknown agents.
+
+For manual setup, create these owners with the same checkout root:
+
+| Agent | Standing instructions |
 | --- | --- |
-| ripple-app | agents/application/AGENTS.md and agents/WORKFLOW.md |
-| ripple-docs | agents/documentation/AGENTS.md and agents/WORKFLOW.md |
-| ripple-report | agents/reporting/AGENTS.md and agents/WORKFLOW.md |
+| `ripple-app` | `agents/application/AGENTS.md` and `agents/WORKFLOW.md` |
+| `ripple-docs` | `agents/documentation/AGENTS.md` and `agents/WORKFLOW.md` |
+| `ripple-report` | `agents/reporting/AGENTS.md` and `agents/WORKFLOW.md` |
 
-Allow the owner and the owner's other agents to address them. This is called `owner-agents` in templates and may be shown as "Me and my agents" in the interface. Link the human's chat account to their Switch identity if required. For a room with other human participants, configure the permitted addressing deliberately.
+Permit the owner and the owner's agents to address them. The supplied template calls this `owner-agents`. Keep normal provider permissions enabled.
 
-Connect a messaging app using Console's guide. The event FAQ says local Switch can include Mattermost. Depending on the installed release, this may need to be configured. Slack, Discord, or Telegram are alternatives. An entry in Your Rooms alone does not prove a real chat is connected.
+Create one connected room with you and all three owners. Use [ROOM.md](ROOM.md) as its instructions. Set `@ripple` as the room alias for `ripple-app`. The supplied template includes that mapping; [CHAT-FIRST.md](CHAT-FIRST.md) covers updating an existing room.
 
-Create one room containing you and all three agents. Use `switch/ROOM.md` as its instructions. Start all three sessions. Membership alone does not mean an agent is running.
+Start all three agent sessions. Room membership does not mean a session is running.
 
-## Smoke test before the demo
+## Confirm readiness
 
-In the actual messaging app, mention each agent and ask it to run `python3 ripple.py status`. It should report the checkout root and available workspaces from the command output. Check the actual terminal tool output if available. Do not proceed on the strength of a generic greeting.
+Send this to the coordinator in your actual messaging app:
 
-Once all three can run commands, follow switch/CHAT-FIRST.md to configure @ripple and start a free-text request in the chat. The dashboard also supports request creation and dispatch. See DEMO.md for the recording sequence.
+```text
+@ripple Read your current role file and agents/WORKFLOW.md. Ask the workspace
+owners to load their instructions and report their checkout root and role.
+Confirm whether everyone is ready. Do not create a request yet.
+```
 
-When an agent is silent, check its thread, exact mention, provider, live session, working directory, and owner identity. Use the installed Console's agent status view or documented `!agents-status` room command. Share the actual error for troubleshooting. Do not reset the room or enable permission bypass to make it appear to work.
+The coordinator should collect each owner's actual `python3 ripple.py status` result. Check that the checkout roots and assigned roles agree. A greeting or a successful dispatch receipt does not establish readiness.
 
-## What this setup does and does not prove
+Follow [the first-request walkthrough](../README.md#run-your-first-change). Manual handoff is enough to send approval back to the room. [Direct dispatch](DIRECT-DISPATCH.md) is optional.
 
-All three agents run on one Mac for this entry and act on three real local workspaces. This is not a connected Notion, Google Sheets, or GitHub API integration. The agents coordinate through Switch; Ripple does not contain an independent chat bus. The actual room recording is required to prove the Switch workflow.
+If an owner does not answer, check its exact mention, working directory, provider sign-in, running session, and addressing permission. The room command `!agents-status` reports agent presence; see [Switch's room commands](https://docs.switchagents.ai/switch-rooms/resources/room-commands). Preserve the error and existing requests. Do not reset a room or bypass permissions to force progress.
+
+## Verify the workflow
+
+A complete run includes the chat request, each impact assessment, checked proposals, human approval, and applied files with a final result. Automated fixtures do not establish that your installed Switch sessions can complete this flow. Verify it in the actual room before relying on it for a demonstration.
