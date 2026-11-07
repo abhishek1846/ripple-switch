@@ -1,103 +1,109 @@
 # Ripple
 
+Updated: 2026-11-07
+
 **Change it once. Update everything affected.**
 
-A plan limit changes in team chat. The application, help guide, and capacity workbook all need to follow. Ripple gives each workspace an agent and coordinates their work through Switch. Agents inspect real files, explain the consequences, and propose edits. A person reviews the exact changes. Each agent applies its part, then Ripple checks the resulting workspaces together.
+Describe a change in your team's Switch room. Workspace agents inspect their files and explain the impact. The affected owners prepare edits and acceptance checks. You review the proposal, approve it, and follow the work through application.
 
-Built for the November 4-7, 2026 Flip the Switch Hackathon. Selected track: Best Business Workflow.
+A request can rename a product, add a guide, change behavior, or revise reporting assumptions. Ripple starts with the request's text. It does not require a customer plan, a file limit, or a patch from every agent.
 
-Current status: 26 local workflow and transport tests pass. Real Chromium checks run in [GitHub Actions](https://github.com/abhishek1846/ripple-switch/actions). The installed Switch connection has passed its actual connection probe. The first real request has inspections and proposals from all three agents and passed the combined checks. Human approval, actual application, and a recorded complete run remain pending. The new chat-first intake path still needs verification in the installed room.
+Built for the Flip the Switch Hackathon. Track: Best Business Workflow.
 
-## Run the local app
+## Start in Mattermost
 
-Requires Python 3.9 or newer. No pip packages, Node installation, API key, or paid database is required to run Ripple itself.
+```text
+@ripple Rename Parcel to Relay in current product references. Preserve historical release notes and keep product behavior unchanged.
+```
+
+The coordinator creates one request and asks the connected workspace owners to assess it. Each records affected, unaffected, or blocked with a reason. Only affected owners propose edits. The dashboard shows those findings and provides human review. [Chat-first setup](switch/CHAT-FIRST.md) explains the room alias and agent instructions.
+
+For the included workspaces, a product rename affects application and documentation. The numeric capacity workbook can remain unchanged. Another request can add and link a customer guide using only the documentation owner. These routes are exercised with deterministic tests. A native Switch rehearsal of the new general flow is still required.
+
+## Run Ripple
+
+Requires Python 3.9 or newer. No pip packages or model API key are required by Ripple itself.
 
 ```bash
 python3 ripple.py serve
 ```
 
-Open http://127.0.0.1:8790. Keep the Terminal open. `--port` selects a different port. The server binds only to loopback.
+Open http://127.0.0.1:8790. Keep the Terminal open. The server binds to loopback; --port selects another port. Restart after backend updates. Runtime data survives in the ignored .ripple directory.
 
-The interface is a persistent change ledger with a Switch route map, file review, workspace views, and activity receipts. It preserves the distinction between a saved change, a message accepted by Switch, and actual agent tool results. Workspaces shows the actual application configuration, a file-selection check using the server validator, the current Markdown documents, and the generated CSV report.
+You can also choose New change in the dashboard and write the request. Send to Switch posts it through the configured connection. Manual handoff copies the message for your room. New preserves an idle unsent request as a draft. A request created while another is working stays a separate draft until resumed.
 
-## Connect Switch
+## Connected workspaces
 
-Switch Console and a signed-in agent provider are required for the actual chat workflow. The included setup defaults to Codex but supports the providers exposed by your Console. The local app is not a substitute for this connection. Open Switch connection to save and test the server, dispatch identity, and room. [Direct dispatch setup](switch/DIRECT-DISPATCH.md) explains how to register the passive dispatch identity without a model API key.
-
-Follow [switch/SETUP.md](switch/SETUP.md). Use [switch/ripple.template.yaml](switch/ripple.template.yaml) to create the three agents and room, or follow its manual fallback. Enter your checkout's absolute path. Validate and run the template in your installed Console. The source follows the documented version-1 format; successful execution in the installed release remains to be verified.
-
-| Agent | Assigned working context |
+| Owner | Available context |
 | --- | --- |
-| ripple-app | Application configuration and real Python server validation. Coordinates the combined check. |
-| ripple-docs | Current plan guide, onboarding instructions, and historical release notes. |
-| ripple-report | CSV assumptions, source account inputs, a Python forecast generator, and its resulting workbook. |
+| ripple-app, addressed as @ripple | Coordinates the request. Owns application configuration and Python behavior. |
+| ripple-docs | Owns current customer documentation and new guides. Archived history is protected. |
+| ripple-report | Owns reporting assumptions, a generator, and its CSV output. Source account data is protected. |
 
-All three run on one machine in this entry. They use separate assigned areas within one checkout. These are real local working files, not authenticated Notion, Google Sheets, or GitHub API connections. Agent role instructions do not isolate filesystem permissions. Ripple enforces per-area proposal paths and protects read-only source/history files.
+These are three local working areas on one machine. The fictional Parcel app and account inputs supply reproducible starting material. They are not authenticated Notion, Google Sheets, or remote repository integrations. Requests can change supported text/configuration within these connected areas. An unavailable system or missing business decision requires clarification.
 
-Switch is the shared conversation where people give the request, agents hand off findings, and the person announces their decision. Agents use their native coding provider to invoke Ripple's CLI. Ripple has no independent multi-agent message broker and does not manufacture chat output. The direct client uses the documented Switch agent bridge and discovers the room-detail operation from the actual server registry. Successful sends record their real HTTP status and message ID when returned. A successful send never creates invented agent inspections. The local CLI remains available for development and tests.
+General proposals may update or add supported text files. Deletion is not implemented. Role instructions are not filesystem isolation. Ripple enforces proposal paths, inspection hashes, protected files, and approval of the checked bundle.
 
-## Complete a change
+## Switch's role
 
-1. Follow [chat-first setup](switch/CHAT-FIRST.md), then ask in Mattermost: `@ripple Increase the Basic plan's file limit from 5 to 10. Update the application, help docs, and storage forecast. Keep Pro unchanged.` The coordinator interprets the supported plan-limit target, registers one request, and hands its ID to the other agents. Unsupported or ambiguous changes require clarification.
-2. Alternatively choose New change in Ripple. Customer plan means Parcel's Basic or Pro tier. New file limit means its maximum files per project. New preserves an unsent request as a draft. Requests created while agents are working remain separate drafts. Resume a draft before dispatch. Choose Send to Switch, or use Manual handoff if direct dispatch is unavailable. Each working agent inspects its files, prepares a patch, and submits it with the CLI.
-3. The application agent runs the combined check once all three proposals exist. Proposed files are assembled in a temporary directory. Live workspaces remain unchanged.
-4. Review the before/after file contents and check results in Ripple. Approve the exact checked bundle.
-5. Choose Send approval, or copy the manual approval message into the same room. Each agent applies its own proposal. The final application runs the checks against the actual updated workspaces.
-6. Open Workspaces. A ten-file Basic selection is accepted, an eleven-file selection is rejected, and Pro remains unchanged. Current help pages agree. The Basic capacity estimate changes from 3.91 to 7.81 GiB. Historical launch facts remain intact.
+Switch connects the human and native coding agents in the actual Mattermost conversation. The coordinator registers the request using Ripple's CLI, then hands its ID to the other owners through Switch. Replies and approvals reuse that ID. Only the coordinator creates a request. An actual source message ID provides idempotency when available.
 
-The included scenario starts with Basic at 5 files and Pro at 25. Account counts and the Parcel example are fictional. Capacity is a planning estimate at each plan's maximum, not a measurement of customer usage.
+Ripple's backend is a change ledger and review engine. It does not contain an independent model runtime or manufacture agent replies. The configured HTTP bridge records message acceptance separately from workspace activity. A successful send does not prove an agent acted.
 
-## Agent tool interface
+Install Console, select a signed-in provider, and follow [setup](switch/SETUP.md). The [template](switch/ripple.template.yaml) creates the roles and alias. [Direct dispatch](switch/DIRECT-DISPATCH.md) explains the optional passive dispatch identity. Manual handoff works with the existing room too. Native execution of the updated template still needs verification in Console.
+
+## Review and finish
+
+1. Workspace owners inspect and record their assessment. Unaffected owners explain why they can stop. A blocked owner asks a question in the room.
+2. If clarification is needed, the coordinator records the human's answer. Earlier proposals and approval are invalidated so the owners reassess.
+3. Affected owners prepare file proposals and acceptance conditions. Live files stay unchanged.
+4. The coordinator checks the candidate bundle and returns a review link. Read the file edits and whether the conditions cover the request.
+5. Approve in Ripple and send the approval to the room. Only affected owners apply their parts. The last application reruns checks against the updated files.
+
+The dashboard keeps incomplete and failed work visible. An all-unaffected assessment is shown as No changes needed, with every owner's reasoning available. Human approval is a local reviewer control, not remote identity authentication.
+
+## What the checks establish
+
+General proposals declare text conditions, typed JSON values, or CSV row values. Ripple executes those conditions before and after application. At least one condition per proposal must detect a change relative to the original file. Changed JSON and CSV must parse; changed Python must parse as Python. Unaffected workspaces remain unchanged.
+
+These checks prove the recorded conditions. They do not establish that an agent's conditions fully represent an arbitrary natural-language request. Human review covers that question. General checks do not execute agent-supplied shell commands or arbitrary test scripts.
+
+Existing structured plan-limit records retain the earlier independent verifier: actual Python validator behavior, preserved plan values, current guides, archived history, and independently recomputed forecast. This keeps the first checked user request valid after the upgrade.
+
+File changes invalidate stale proposals or approval. Individual file writes are atomic. Application across workspaces is not a distributed transaction; partial application remains visible.
+
+## Agent interface
 
 ```bash
-python3 ripple.py status
-python3 ripple.py inspect CHANGE_ID application --actor ripple-app
-python3 ripple.py propose CHANGE_ID application --patch .ripple/drafts/app.json --summary "Update the Basic application limit" --actor ripple-app
+python3 ripple.py intake --request "Add a customer guide about choosing project names."
+python3 ripple.py inspect CHANGE_ID documentation --actor ripple-docs
+python3 ripple.py assess CHANGE_ID documentation --outcome affected --reason "A new guide is needed." --actor ripple-docs
+python3 ripple.py propose CHANGE_ID documentation --patch .ripple/drafts/docs.json --summary "Add and link the guide" --actor ripple-docs
 python3 ripple.py check CHANGE_ID
-python3 ripple.py apply CHANGE_ID application --actor ripple-app
+python3 ripple.py apply CHANGE_ID documentation --actor ripple-docs
 ```
 
-Each patch includes findings and complete resulting file text with hashes from inspection. See [agents/WORKFLOW.md](agents/WORKFLOW.md). Human approval is performed in the local interface. The CLI does not expose an approve command to the agents. This is a local reviewer control, not remote user authentication against a chat identity.
+The apply command requires human approval. Agents have no approve CLI. See [agent workflow](agents/WORKFLOW.md) for the complete patch and acceptance schemas. Request text must be passed as data using an argument list or proper shell quoting.
 
-## What gets checked
-
-- The application's actual Python validator accepts each plan at its limit and rejects one file above it.
-- Unaffected plan limits remain unchanged.
-- Current plan tables, explanations, and onboarding instructions match the requested limit.
-- Historical release notes and source account data remain unchanged.
-- The resulting CSV values are independently recomputed from account inputs and requested limits.
-- File changes invalidate stale inspections or approval. Replacing a proposal revokes earlier approval.
-- All three areas must apply successfully before the change can be complete. Repeated application is idempotent.
-
-These are explicit checks for the included workflow, not a proof that arbitrary prose or every external system is consistent. Proposed Python code runs locally during checks; temporary execution is not a security sandbox. Individual file writes are atomic, but the three-workspace update is not a distributed transaction. Partial application stays visible.
-
-## Validate
+## Validation and evidence
 
 ```bash
 python3 -m unittest discover -s tests -v
 node --check web/app.js
 ```
 
-Node is only needed for the optional JavaScript syntax and browser checks. The GitHub Actions workflow runs the Python suite and real Chromium interaction checks. To run browser checks locally on a clean checkout: `npm install`, `npx playwright install chromium`, then `npm run test:browser`. Browser tests create and apply deterministic test proposals in that checkout, so use a fresh checkout rather than an active demo workspace. See [VERIFICATION.md](VERIFICATION.md) for observed results and limits. Test fixtures are deterministic local tests, not AI or Switch runs.
+Forty-three isolated Python tests currently pass locally, including general routing and the preserved legacy workflow. [GitHub Actions](https://github.com/abhishek1846/ripple-switch/actions) also runs actual Chromium interactions. Run browser tests only in a clean checkout: npm install, npx playwright install chromium, npm run test:browser. Their proposals are deterministic fixtures, not evidence of native agent execution.
 
-## Recording and submission
+The installed connection probe passed. The original user request has actual inspections and proposals from all three agents and a passing combined check. Final application and the new free-text native flow remain to be observed. See [VERIFICATION.md](VERIFICATION.md).
 
-Follow [DEMO.md](DEMO.md) for a recording under three minutes and [SUBMISSION.md](SUBMISSION.md) for the form draft. Replace status-dependent claims only after observing the actual workflow. A hosted deployment is optional under the submission form.
+## Recording and source
 
-To export actual tool receipts:
+[DEMO.md](DEMO.md) contains the recording flow. [SUBMISSION.md](SUBMISSION.md) holds the form draft. The required video must be under three minutes on YouTube or Loom, public or unlisted. A deployment is optional.
 
-```bash
-python3 ripple.py export --output artifacts/run-receipts.json
-```
+Export observed receipts with `python3 ripple.py export --output artifacts/run-receipts.json`. Actor names and chat references are caller-supplied metadata. The chat recording provides evidence of native handoffs.
 
-Receipts show actual local tool operations. Actor names and optional room URLs in workspace receipts are reported by callers. Direct dispatch receipts are created after actual HTTP responses. The real chat recording supplies evidence of the full Switch interaction.
+Package source using `python3 scripts/package.py`. Runtime, credentials, and user drafts are excluded. The public repository keeps the initial workspace fixtures so the example can be reproduced.
 
-Package source with `python3 scripts/package.py`. Runtime, drafts, credentials, and uploads are excluded. Keep the initial workspace fixtures in the source entry so judges can reproduce the change from the starting limit.
+The setup follows the [official Switch workflow guide](https://www.wemakedevs.org/blogs/how-to-build-a-switch-workflow-that-finishes-a-real-task) and upstream [template reference](https://github.com/sandbox-quantum/switch/blob/main/docs/TEMPLATES.md). Interface references and decisions are in [DESIGN.md](DESIGN.md).
 
-## References
-
-The room design follows the [official Switch workflow guide](https://www.wemakedevs.org/blogs/how-to-build-a-switch-workflow-that-finishes-a-real-task). The template structure was checked against the upstream [triage-pair example](https://github.com/sandbox-quantum/switch/blob/main/examples/agent-templates/triage-pair.template.yaml) and [template reference](https://github.com/sandbox-quantum/switch/blob/main/docs/TEMPLATES.md). Live release compatibility must be established in Console.
-
-See [DESIGN.md](DESIGN.md) for the interface references and design decisions.
-
-MIT licensed. Built with AI assistance using Codex. Switch and the chosen model provider have their own licenses and terms.
+MIT licensed. Built with AI assistance using Codex. Switch and model providers have their own terms.

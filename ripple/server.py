@@ -26,7 +26,7 @@ def mutate(app, path, data):
     if path == '/api/switch/test':
         return Switch(app).test()
     if path == '/api/changes':
-        return app.start(data.get('request'), data.get('plan', 'basic'), data.get('limit', 10), data.get('draft', False))
+        return app.start(data.get('request'), data.get('plan'), data.get('limit'), data.get('draft', False))
     if path == '/api/validate':
         return validate_files(app, data)
     pieces = path.strip('/').split('/')

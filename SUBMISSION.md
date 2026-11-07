@@ -1,6 +1,8 @@
 # Submission draft
 
-Status: local application and tests prepared. Live Switch run, public source URL, recording URL, and final submission are not yet verified. This draft must be updated with observed facts before submission.
+Updated: 2026-11-07
+
+Status: public source exists. The original request has checked proposals. The general free-text flow has local tests; native rehearsal, complete application, recording, and submission remain pending. Update claims from the observed recording before submitting.
 
 ## Project title
 
@@ -14,11 +16,11 @@ Best Business Workflow
 
 When a team changes a product decision, the consequences are scattered across its application, documentation, and reports. Ripple coordinates agents through a shared Switch chat to inspect those working contexts and prepare the affected edits. A person reviews the exact changes, then each agent applies its part. Ripple verifies that the resulting work agrees and keeps incomplete or failed areas visible.
 
-The included workflow changes a plan's file limit across a real Python validator, Markdown help pages, and a generated CSV capacity workbook. Current guidance changes while historical release facts remain intact. This entry uses three local workspaces on one machine.
+A request starts as plain text. Each workspace owner records whether it is affected and why. Only affected owners propose edits and acceptance conditions. The included local contexts support requests such as renaming the product or adding and linking a customer guide. Archived release facts and source account data are protected. This entry uses three local workspaces on one machine. The video supplies evidence for the request actually demonstrated.
 
 ## GitHub repository
 
-Fill with the verified public repository URL after publishing. Do not submit this placeholder.
+https://github.com/abhishek1846/ripple-switch
 
 ## Demo video
 
@@ -30,7 +32,7 @@ Optional. Leave blank unless an accessible deployment was actually verified. A l
 
 ## How did you use Switch?
 
-Draft to complete after the real run: We connected three [actual provider] agents to [actual messaging app] through Switch. The application agent inspected and changed the Python application's plan configuration. The documentation agent updated current guidance while preserving archived release facts. The reporting agent recalculated the CSV capacity workbook. Agents shared findings and handed off the combined check in the same room. The human reviewed the proposed edits in Ripple and announced approval in chat. Each agent applied its own changes and posted its actual result.
+Draft to complete after the observed run: We connected three [actual provider] agents to [actual messaging app] through Switch. The coordinator received the human's request and registered one Ripple record. Workspace owners inspected their files and reported impact. Affected owners prepared proposals and acceptance checks. The human reviewed and approved the checked bundle in Ripple, then sent the approval through the room. Affected owners applied their parts and reported results. [Describe the actual change and outcome shown in the video.]
 
 Replace bracketed details with observed setup. Include the actual room interaction and provider behavior in the video. Do not claim native API integrations with Notion, Google Sheets, or GitHub when using the included local workspaces.
 

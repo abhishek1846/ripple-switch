@@ -1,27 +1,48 @@
 # Start from Mattermost
 
-The primary flow begins in the shared room:
+Updated: 2026-11-07
+
+The primary flow begins with a change written as text:
 
 ```text
-@ripple Increase the Basic plan's file limit from 5 to 10. Update the application, help docs, and storage forecast. Keep Pro unchanged.
+@ripple Rename Parcel to Relay in current product references. Preserve historical release notes and keep product behavior unchanged.
 ```
 
-The `ripple-app` coordinator receives this alias, interprets the requested target, and invokes `ripple.py intake` once. It then addresses the documentation and reporting agents with the actual change ID while it handles the application. All three share the Switch room. The dashboard fills from actual tool calls; a person does not need to create the request in the dashboard first.
+The ripple-app coordinator registers one general request with `ripple.py intake --request TEXT`. It does not require --plan or --limit. It asks each workspace owner to inspect and assess affected/unaffected/blocked. Only affected owners propose edits and acceptance conditions. The dashboard fills from their CLI operations and provides the review link.
 
-## Update an existing room once
+## Prepare an existing room
 
-In the actual shared room, set the alias:
+Finish any active request before changing agent sessions. Do not reset its files or recreate it. In the shared room, configure the alias once:
 
 ```text
 !set-alias @ripple-app @ripple
 ```
 
-After finishing any active request, restart the three working agent sessions so they read the current checkout's AGENTS.md and role instructions. Keep their working directory at the Ripple checkout root. This is a session restart, not deletion of agents, rooms, or workspace data. Do not interrupt a request waiting for review merely to refresh instructions.
+The official [room command reference](https://github.com/sandbox-quantum/switch/blob/main/docs/official/resources/room-commands.md) documents this syntax. The template includes the alias for new rooms.
 
-The coordinator's standing instructions must still tell it to read `agents/application/AGENTS.md` and `agents/WORKFLOW.md`. The template contains that instruction already. If the installed agents were created differently, ask switch-buddy to refresh their instructions from the checkout.
+Each agent must run from the Ripple checkout root. Its standing instructions must read its current agents/AREA/AGENTS.md and agents/WORKFLOW.md. Refresh existing sessions after the active run finishes, or ask them to reread these files before the next request:
 
-For a new human request, only the coordinator creates a record. Each worker uses its assigned area and the coordinator's change ID. Message IDs, when exposed by Switch, provide idempotency. A repeated request without a stable source message ID cannot be deduplicated cryptographically; the coordinator must reuse the ID already created in its thread.
+```text
+@ripple-app @ripple-docs @ripple-report Before the next request, reread your role file under agents/ and agents/WORKFLOW.md. The new workflow accepts free-text changes. Every workspace assesses impact; only affected owners propose. Run python3 ripple.py status and confirm what instructions you loaded. Do not create a request yet.
+```
 
-The human opens the returned review link, checks the actual edits, and approves in Ripple. The existing approval handoff or configured direct dispatch then asks the workers to apply their approved updates. The dashboard remains the review/evidence surface. Chat-native approval has not been implemented.
+Do not delete agents, rooms, or runtime data. The new behavior must be verified in the installed room; a template file and deterministic tests do not establish native execution.
 
-These role and alias changes must be verified in the actual installed Switch room. Unit or browser tests alone do not establish a live chat run.
+## Rehearse the workflow
+
+1. Send the rename request above. Show the coordinator's actual intake result and handoffs.
+2. Show the owners' findings. Application and documentation should inspect the current name. Reporting should inspect its numeric files and explain why it is unaffected if no name references are present.
+3. Open the coordinator's review link. Read the edits and acceptance coverage. Approve in Ripple, then send the approval through the configured connection or Manual handoff.
+4. Affected owners apply their parts. Show the updated files and actual check result. An unaffected owner does not apply an empty patch.
+
+Another independent request:
+
+```text
+@ripple Add a customer guide explaining how to choose a descriptive project name. Link it from the getting started guide. Keep application behavior and reporting unchanged.
+```
+
+This should involve documentation edits only after all owners assess the request. The new guide should appear in Workspaces.
+
+Only the coordinator creates records. Workers reuse its ID. Use the actual source message ID for deduplication when Switch exposes it. Without that ID, the coordinator must reuse the record already created in its thread. Never invent a message ID.
+
+Approval remains in the local dashboard. Chat-native approval is not implemented. Requests cover the connected local workspaces; an inaccessible external system is an explicit gap.

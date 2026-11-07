@@ -1,14 +1,16 @@
 # Verification record
 
+Updated: 2026-11-07
+
 Observed November 7, 2026.
 
-- Twenty-six Python workflow and Switch transport tests pass locally. They include draft preservation, safe resume against current files, continued active work while creating drafts, and deduplication by an actual source message ID.
+- Forty-three isolated Python workflow and Switch transport tests pass locally. General cases cover free-text intake, two-area rename, one-area new documentation, JSON/CSV acceptance conditions, blocked questions, reassessment, scope revision revoking approval, protected files, failed-write rollback, and outside edits invalidating approval. The earlier plan-limit, draft, and transport tests also pass.
 - JavaScript syntax check passes.
 - The end-to-end test uses actual isolated workspaces, submits file proposals, checks them without changing live files, approves, applies each area, and verifies the resulting application behavior and calculated CSV output.
 - Negative tests catch stale onboarding, incorrect forecast values, unintended changes to another plan, stale file inspections, intervening human edits, invalid paths, premature application, and reused approvals after a proposal changes.
 - Repeat application is idempotent. Missing areas remain incomplete.
 - A Pro-only change also passes without altering Basic.
-- Earlier published revisions passed 19 tests and real Chromium checks. Browser coverage for the new draft and form behavior is being run separately.
+- Earlier published revisions passed 19 tests and real Chromium checks. The draft revision passed browser run 42373123195 on 59bed47dc3df2288320d58b0abdfae6394d88fa3. Browser coverage for the general request revision is being run separately.
 - Static HTML checks confirmed unique element IDs and existing local asset references.
 
 These are software tests with deterministic fixtures. They do not establish AI-agent execution or a working Switch connection.
@@ -31,7 +33,7 @@ The public source repository exists at https://github.com/abhishek1846/ripple-sw
 
 ## Not yet verified
 
-- Native execution of the updated template and @ripple chat-first intake in the installed room.
+- Native execution of the updated template and general @ripple free-text intake, assessments, and selective application in the installed room.
 - Direct inspection of actual chat handoffs, final human approval, and agent application for the first complete run.
 - Direct inspection of the user's running browser. This session cannot access its loopback port. Browser interaction was verified independently in GitHub Actions.
 - Video upload and form submission.

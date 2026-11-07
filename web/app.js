@@ -5,7 +5,7 @@ const token = $('meta[name="ripple-token"]').content;
 const areas = ['application', 'documentation', 'reporting'];
 const names = {application: 'Application', documentation: 'Documentation', reporting: 'Reporting'};
 const actors = {application: 'ripple-app', documentation: 'ripple-docs', reporting: 'ripple-report'};
-const labels = {draft: 'Draft', discovering: 'Awaiting agents', ready_to_check: 'Ready to check', awaiting_approval: 'Your review needed', needs_revision: 'Revision needed', approved: 'Approved', applying: 'Applying edits', verifying: 'Verifying result', complete: 'Verified', verification_failed: 'Verification failed', cancelled: 'Cancelled'};
+const labels = {needs_clarification: 'Question for you', no_changes: 'No changes needed', draft: 'Draft', discovering: 'Awaiting agents', ready_to_check: 'Ready to check', awaiting_approval: 'Your review needed', needs_revision: 'Revision needed', approved: 'Approved', applying: 'Applying edits', verifying: 'Verifying result', complete: 'Verified', verification_failed: 'Verification failed', cancelled: 'Cancelled'};
 const initialRoute = new URLSearchParams(location.hash.slice(1));
 let state, current, selectedId = initialRoute.get('change'), tab = initialRoute.get('tab') || 'overview', refreshing = false, busy = false, toastTimer;
 
@@ -16,6 +16,11 @@ const safeURL = value => {try {const u = new URL(value); return ['http:', 'https
 const connection = () => state?.switch || {configured: false, connected: false, message: 'Connect a Switch room to dispatch this change.'};
 const phase = () => current?.approval ? 'approval' : 'request';
 const receipt = () => current?.dispatches?.[phase()];
+const general = c => c?.kind === 'general';
+const required = c => c?.required_areas || areas;
+const closed = c => ['no_changes', 'complete', 'cancelled'].includes(c.status);
+const shortRequest = c => c.request.split('\n')[0].slice(0, 85);
+const changeTitle = c => general(c) ? shortRequest(c) : `${titleCase(c.target.plan)} file limit: ${c.before} to ${c.target.limit}`;
 const events = () => state?.events.filter(e => e.change === current?.id) || [];
 
 async function api(path, data) {
@@ -57,7 +62,7 @@ async function refresh() {
     state = next;
     current = state.changes.find(c => c.id === selectedId) || [...state.changes].reverse().find(c => c.status !== 'cancelled') || null;
     if (current) selectedId = current.id;
-    $('#restart-notice').hidden = state.api_version === 3;
+    $('#restart-notice').hidden = state.api_version === 4;
     $('#local-server-state').textContent = 'Local workspace server available';
     if (changed) render();
   } catch (exc) {
@@ -71,9 +76,9 @@ function render() {
 }
 function renderHistory() {
   const query = $('#history-search').value.toLowerCase();
-  const changes = [...state.changes].reverse().filter(c => `${c.id} ${c.request} ${c.target.plan}`.toLowerCase().includes(query));
+  const changes = [...state.changes].reverse().filter(c => `${c.id} ${c.request} ${c.target?.plan || ""}`.toLowerCase().includes(query));
   $('#history-count').textContent = String(state.changes.length).padStart(2, '0');
-  $('#history').innerHTML = changes.length ? changes.map(c => `<button class="history-item ${c.id === current?.id ? 'selected' : ''}" data-change="${esc(c.id)}"><span class="status-dot ${c.status === 'complete' ? 'green' : ['cancelled', 'draft'].includes(c.status) ? '' : 'orange'}"></span><span><strong>${esc(titleCase(c.target.plan))}: ${c.before} → ${c.target.limit} files</strong><small>${esc(c.id)} / ${esc(labels[c.status])}</small></span></button>`).join('') : '<p class="history-empty">No changes here yet.<br>Create a change to begin.</p>';
+  $('#history').innerHTML = changes.length ? changes.map(c => `<button class="history-item ${c.id === current?.id ? 'selected' : ''}" data-change="${esc(c.id)}"><span class="status-dot ${c.status === 'complete' ? 'green' : ['cancelled', 'draft', 'no_changes'].includes(c.status) ? '' : 'orange'}"></span><span><strong>${esc(general(c) ? shortRequest(c) : titleCase(c.target.plan) + ": " + c.before + " → " + c.target.limit + " files")}</strong><small>${esc(c.id)} / ${esc(labels[c.status])}</small></span></button>`).join('') : '<p class="history-empty">No changes here yet.<br>Create a change to begin.</p>';
 }
 function renderConnection() {
   const c = connection();
@@ -94,17 +99,23 @@ function renderChange() {
   $('#change-workspace').hidden = !c;
   if (!c) return;
   $('#change-id').textContent = c.id;
-  $('#change-title').textContent = `${titleCase(c.target.plan)} file limit: ${c.before} to ${c.target.limit}`;
+  $('#change-title').textContent = changeTitle(c);
   $('#request-origin').textContent = c.origin === 'mattermost' ? 'From Mattermost' : 'Created in Ripple';
   $('#change-created').textContent = `Created ${time(c.created)}`;
   $('#change-status').textContent = labels[c.status] || c.status;
   $('#change-status').className = 'status-label ' + c.status;
-  $('#change-request').textContent = c.request;
-  $('#before-value').textContent = c.before;
-  $('#after-value').textContent = c.target.limit;
-  $('#decision-label').textContent = `${titleCase(c.target.plan)} / files per project`;
+  $('#change-request').textContent = c.request + (c.clarifications || []).map(item => '\nClarification: ' + item.answer).join('');
+  $('#decision-numbers').hidden = general(c);
+  $('#decision-text').hidden = !general(c);
+  $('#decision-text').textContent = c.request;
+  if (!general(c)) {
+    $('#before-value').textContent = c.before;
+    $('#after-value').textContent = c.target.limit;
+  }
+  $('#decision-label').textContent = general(c) ? 'Impact comes from workspace assessments.' : `${titleCase(c.target.plan)} / files per project`;
   const files = Object.values(c.proposals).reduce((sum, p) => sum + p.files.length, 0);
-  $('#scope-stats').innerHTML = `<div class="stat"><span>Workspaces inspected</span><strong>${Object.keys(c.inspections).length} / 3</strong></div><div class="stat"><span>File updates proposed</span><strong>${files}</strong></div><div class="stat"><span>Workspaces applied</span><strong>${Object.keys(c.applied).length} / 3</strong></div>`;
+  const assessed = Object.keys(c.assessments || {}).length, involved = required(c).length;
+  $('#scope-stats').innerHTML = `<button class="stat" data-action="impact"><span>${general(c) ? 'Workspaces assessed' : 'Workspaces inspected'}</span><strong>${general(c) ? assessed : Object.keys(c.inspections).length} / ${areas.length}</strong></button><button class="stat" data-action="files"><span>File updates proposed</span><strong>${files}</strong></button><button class="stat" data-action="impact"><span>Workspaces applied</span><strong>${Object.keys(c.applied).length} / ${involved || '?'}</strong></button>`;
   $('#tab-file-count').textContent = files;
   $('#tab-event-count').textContent = events().length;
   renderMap(); renderNextStep(); renderImpact(); renderChecks(); renderFiles();
@@ -113,40 +124,54 @@ function renderMap() {
   const c = current, sw = connection(), sent = c.dispatches?.request?.status === 'sent';
   const activity = Object.keys(c.inspections).length > 0;
   const switchLabel = sent ? 'Request accepted' : sw.connected ? 'Room verified' : sw.configured ? 'Connection unavailable' : 'Manual handoff';
-  $('#route-map').innerHTML = `<svg class="route-wires" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true"><path class="${sent ? 'dispatched' : ''}" d="M160 150 H440"/><path d="M440 150 H610 Q625 150 625 135 V69 Q625 54 640 54 H790"/><path d="M440 150 H790"/><path d="M440 150 H610 Q625 150 625 165 V231 Q625 246 640 246 H790"/></svg><div class="route-node decision-node"><span class="node-type">YOUR DECISION <span>↗</span></span><strong>${c.before} → ${c.target.limit} files</strong><small>${esc(titleCase(c.target.plan))} plan</small></div><button class="route-node switch-node" data-action="connect"><span class="node-type">SHARED ROOM <span>↔</span></span><strong>Switch</strong><small>${esc(switchLabel)}</small></button>${areas.map(area => {
+  $('#route-map').innerHTML = `<svg class="route-wires" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true"><path class="${sent ? 'dispatched' : ''}" d="M160 150 H440"/><path d="M440 150 H610 Q625 150 625 135 V69 Q625 54 640 54 H790"/><path d="M440 150 H790"/><path d="M440 150 H610 Q625 150 625 165 V231 Q625 246 640 246 H790"/></svg><div class="route-node decision-node"><span class="node-type">YOUR DECISION <span>↗</span></span><strong>${general(c) ? "Change requested" : esc(c.before + " → " + c.target.limit + " files")}</strong><small>${esc(general(c) ? c.request.slice(0, 65) : titleCase(c.target.plan) + " plan")}</small></div><button class="route-node switch-node" data-action="connect"><span class="node-type">SHARED ROOM <span>↔</span></span><strong>Switch</strong><small>${esc(switchLabel)}</small></button>${areas.map(area => {
     const proposed = c.proposals[area], inspected = c.inspections[area], applied = c.applied[area];
-    const status = applied ? 'Applied to workspace' : proposed ? `${proposed.files.length} file edits proposed` : inspected ? 'Inspection received' : 'No tool activity yet';
-    return `<button class="route-node agent-node area-${area} ${applied ? 'applied' : ''}" data-area="${area}"><span class="node-type">${esc(actors[area])} <span class="status-dot ${applied ? 'green' : proposed ? 'orange' : ''}"></span></span><strong>${esc(names[area])}</strong><small>${esc(status)}</small></button>`;
+    const assessment = c.assessments?.[area];
+    const status = assessment?.outcome === 'unaffected' ? 'Unaffected' : assessment?.outcome === 'blocked' ? 'Question for you' : applied ? 'Applied to workspace' : proposed ? `${proposed.files.length} file edits proposed` : inspected ? 'Inspection received' : 'No tool activity yet';
+    return `<button class="route-node agent-node area-${area} ${applied ? 'applied' : assessment?.outcome === 'unaffected' ? 'unaffected' : ''}" data-area="${area}"><span class="node-type">${esc(actors[area])} <span class="status-dot ${applied ? 'green' : proposed ? 'orange' : ''}"></span></span><strong>${esc(names[area])}</strong><small>${esc(status)}</small></button>`;
   }).join('')}`;
   $('#route-mode').textContent = sent ? 'Real Switch dispatch recorded' : activity ? 'Actual tool activity received' : 'No API dispatch recorded';
-  $('#transport-summary').textContent = sent ? `Switch accepted the request for room ${c.dispatches.request.room_id}. Replies are in the actual room; tool results appear here.` : sw.connected ? 'The server, dispatch identity, and room were tested. Send this change to begin the agent workflow.' : activity ? 'Actual workspace tool activity has arrived. Review your real Switch room for the conversation. Direct API dispatch is not configured.' : 'Direct API dispatch is not configured. Use Manual handoff to send the request into your real Switch room.';
+  $('#transport-summary').textContent = sent ? `Switch accepted the request for room ${c.dispatches.request.room_id}. Replies are in the actual room; tool results appear here.` : activity ? 'Workspace activity is recorded below. Follow the conversation in your Switch room.' : sw.connected ? 'The room connection was tested. Send this request to begin impact discovery.' : activity ? 'Actual workspace tool activity has arrived. Review your real Switch room for the conversation. Direct API dispatch is not configured.' : 'Direct API dispatch is not configured. Use Manual handoff to send the request into your real Switch room.';
 }
 function button(text, action, style = '') {return `<button class="button compact ${style}" data-action="${action}" ${busy ? 'disabled' : ''}>${esc(text)}</button>`;}
 function renderNextStep() {
   const c = current, sw = connection(), r = receipt();
   let heading, detail, buttons, style = '', icon = '↗';
   if (c.status === 'draft') {
-    const active = state.changes.find(other => other.id !== c.id && !['draft', 'complete', 'cancelled'].includes(other.status));
+    const active = state.changes.find(other => other.id !== c.id && other.status !== 'draft' && !closed(other));
     heading = 'Saved as a draft.';
     detail = active ? `${active.id} is active. This request stays in your ledger and can be resumed after that work finishes.` : 'Your request is preserved. Resume it when you are ready to send it to the agents.';
     buttons = active ? `<button class="button compact" data-change="${esc(active.id)}">View active request ↗</button>` : button('Resume this request ↗', 'resume', 'accent');
+  } else if (c.status === 'no_changes') {
+    heading = 'The agents found no changes to make.';
+    detail = 'Each workspace has recorded its reasoning below. Review those findings in the room if you expected a different result.';
+    buttons = button('View assessments', 'impact');
+  } else if (c.status === 'needs_clarification') {
+    heading = 'A workspace needs your answer.';
+    detail = 'Read the question below and reply in the Switch room. The coordinator records your answer before the agents reassess.';
+    buttons = button('View the question', 'impact');
   } else if (c.status === 'complete') {
-    heading = 'The change has reached every workspace.';
-    detail = 'All three areas applied their edits. The final checks passed against actual files and application behavior.';
+    heading = 'The affected work is complete.';
+    detail = general(c) ? `${required(c).length} affected ${required(c).length === 1 ? "workspace applied its proposal" : "workspaces applied their proposals"}. The recorded acceptance conditions pass against the updated files.` : 'All three areas applied their edits. The final checks passed against actual files and application behavior.';
     buttons = button('Inspect the result ↗', 'systems', 'dark'); style = 'complete'; icon = '✓';
   } else if (c.status === 'cancelled') {
     heading = 'This change was cancelled.'; detail = 'No edits were applied. The request stays in the ledger.'; buttons = button('New change ↗', 'new');
   } else if (c.status === 'awaiting_approval') {
-    heading = 'Your review is the next step.'; detail = 'Read the actual file changes. Approval covers this exact checked bundle.';
+    heading = 'Your review is the next step.'; detail = general(c) ? 'Review the file changes and whether the acceptance conditions cover your request. Approval covers this checked bundle.' : 'Read the actual file changes. Approval covers this exact checked bundle.';
     buttons = button('Review files', 'files') + button('Approve changes ↗', 'approve', 'accent');
   } else if (['ready_to_check', 'needs_revision', 'verification_failed'].includes(c.status)) {
     heading = c.status === 'ready_to_check' ? 'The proposals are ready to check together.' : 'An inconsistency needs attention.';
-    detail = c.status === 'ready_to_check' ? 'Run the application, documentation, and workbook checks before approving.' : 'Read the failed checks below. Ask the responsible agent to revise its proposal in the room.';
+    detail = c.status === 'ready_to_check' ? 'Check the affected proposals together before approving.' : 'Read the failed checks below. Ask the responsible agent to revise its proposal in the room.';
     buttons = button('Run combined checks ↗', 'check', 'accent');
+  } else if (general(c) && !c.approval && (Object.keys(c.inspections).length || c.origin === 'mattermost')) {
+    const assessed = Object.keys(c.assessments || {}).length;
+    heading = `${assessed} of ${areas.length} workspaces have assessed the impact.`;
+    detail = 'Affected owners prepare proposals. Unaffected owners record why their workspace can stay as it is. Follow the handoffs in your Switch room.';
+    buttons = button('View assessments', 'impact'); style = 'waiting'; icon = '↳';
   } else if (r?.status === 'sent') {
     const count = Object.keys(c.inspections).length;
     heading = phase() === 'approval' ? 'Approval sent. Waiting for application.' : count ? `${count} of 3 workspaces have reported an inspection.` : 'Switch accepted your request. Waiting for agents.';
-    detail = phase() === 'approval' ? `${Object.keys(c.applied).length} of 3 workspaces applied. Each agent will post its result in the room.` : 'The next update comes from a real agent tool call. If nothing arrives, check that the three sessions are running in Console.';
+    detail = phase() === 'approval' ? `${Object.keys(c.applied).length} of ${required(c).length} affected workspaces applied. Each agent will post its result in the room.` : 'The next update comes from a real agent tool call. If nothing arrives, check that the three sessions are running in Console.';
     buttons = button('Connection details ↗', 'connect'); style = 'waiting'; icon = '↳';
   } else if (!sw.configured && c.approval) {
     heading = 'Approved. Send the decision to your Switch room.';
@@ -165,24 +190,25 @@ function renderNextStep() {
     detail = 'Manual handoff copies the exact request for your existing Switch room. Configure direct dispatch if you prefer sending from this page.';
     buttons = button('Manual handoff', 'handoff') + button('Connect Switch ↗', 'connect', 'accent');
   }
-  const cancel = !Object.keys(c.applied).length && !['complete', 'cancelled'].includes(c.status) ? '<button class="text-button" data-action="cancel">Cancel</button>' : '';
+  const cancel = !Object.keys(c.applied).length && !closed(c) ? '<button class="text-button" data-action="cancel">Cancel</button>' : '';
   $('#next-step').className = 'next-step ' + style;
   $('#next-step').innerHTML = `<span class="step-icon">${icon}</span><div class="step-copy"><h2>${esc(heading)}</h2><p>${esc(detail)}</p></div><div class="step-buttons">${buttons}${cancel}</div>`;
 }
 function renderImpact() {
-  const c = current;
-  $('#impact-summary').textContent = `${Object.keys(c.proposals).length} of 3 areas proposed edits`;
+  const c = current, assessments = c.assessments || {};
+  $('#impact-summary').textContent = general(c) ? `${Object.keys(assessments).length} assessed / ${required(c).length} affected` : `${Object.keys(c.proposals).length} of 3 areas proposed edits`;
   $('#impact-list').innerHTML = areas.map((area, i) => {
-    const p = c.proposals[area], inspection = c.inspections[area], applied = c.applied[area];
-    const summary = p?.summary || (inspection ? 'Inspection received. Waiting for proposed edits.' : 'No inspection received. The agent will check this workspace after the request reaches the room.');
-    return `<article class="impact-row"><span class="impact-number">0${i + 1}</span><button class="impact-name" data-area="${area}"><strong>${esc(names[area])} ↗</strong><small>${esc(actors[area])}</small></button><div><p class="impact-detail">${esc(summary)}</p>${p?.findings.length ? `<ul class="impact-findings">${p.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}</div><span class="impact-state ${applied ? 'applied' : ''}">${applied ? 'APPLIED' : p ? 'PROPOSED' : inspection ? 'INSPECTED' : 'AWAITING'}</span></article>`;
+    const p = c.proposals[area], inspection = c.inspections[area], applied = c.applied[area], assessment = assessments[area];
+    const summary = p?.summary || assessment?.reason || (inspection ? 'Inspection received. Waiting for the impact assessment.' : 'The agent has not inspected this workspace yet.');
+    const status = applied ? 'APPLIED' : p ? 'PROPOSED' : assessment ? assessment.outcome.toUpperCase() : inspection ? 'INSPECTED' : 'AWAITING';
+    return `<article id="impact-${area}" class="impact-row ${assessment?.outcome || ''}"><span class="impact-number">0${i + 1}</span><button class="impact-name" data-area="${area}"><strong>${esc(names[area])} ↗</strong><small>${esc(actors[area])}</small></button><div><p class="impact-detail">${esc(summary)}</p>${p && assessment ? `<p class="impact-reason">${esc(assessment.reason)}</p>` : ''}${p?.findings.length ? `<ul class="impact-findings">${p.findings.map(f => `<li>${esc(f)}</li>`).join('')}</ul>` : ''}</div><span class="impact-state ${applied ? 'applied' : ''}">${status}</span></article>`;
   }).join('');
 }
 function renderChecks() {
   const check = current.check;
   $('#checks-panel').hidden = !check;
   if (!check) return;
-  $('#checks-panel').innerHTML = `<div class="panel-heading"><span class="section-index">03 / ${check.mode === 'actual' ? 'VERIFIED RESULT' : 'PROPOSED BUNDLE CHECK'}</span><span class="small-note">${check.passed ? 'All checks passed' : 'Revision needed'}</span></div>${check.checks.map(item => `<div class="check-row ${item.passed ? '' : 'failed'}"><span>${item.passed ? '✓' : '×'}</span><div><strong>${esc(item.name)}</strong><p>${esc(item.detail)}</p></div></div>`).join('')}`;
+  $('#checks-panel').innerHTML = `<div class="panel-heading"><span class="section-index">03 / ${check.mode === 'actual' ? 'VERIFIED RESULT' : 'PROPOSED BUNDLE CHECK'}</span><span class="small-note">${check.passed ? 'All checks passed' : 'Revision needed'}</span></div>${check.scope ? `<p class="check-scope">${esc(check.scope)}</p>` : ''}${check.checks.map(item => `<div class="check-row ${item.passed ? '' : 'failed'}"><span>${item.passed ? '✓' : '×'}</span><div><strong>${esc(item.name)}</strong><p>${esc(item.detail)}</p></div></div>`).join('')}`;
 }
 function renderFiles() {
   if (!current) return;
@@ -191,13 +217,15 @@ function renderFiles() {
   const opened = new Set([...$('#file-list').querySelectorAll('details[open]')].map(e => e.dataset.path));
   $('#file-list').innerHTML = files.length ? files.map(f => {
     const path = f.area + '/' + f.path;
-    return `<details class="file-diff" data-path="${esc(path)}" ${opened.has(path) ? 'open' : ''}><summary>${esc(path)}<span>${current.applied[f.area] ? 'APPLIED' : 'PROPOSED'}</span></summary><div class="diff-grid"><div><label>BEFORE</label><pre>${esc(f.before)}</pre></div><div><label>AFTER</label><pre>${esc(f.content)}</pre></div></div></details>`;
+    return `<details class="file-diff" data-path="${esc(path)}" ${opened.has(path) ? 'open' : ''}><summary>${esc(path)}<span>${current.applied[f.area] ? 'APPLIED' : f.new_file ? 'NEW FILE' : 'PROPOSED'}</span></summary><div class="diff-grid"><div><label>BEFORE</label><pre>${esc(f.before)}</pre></div><div><label>AFTER</label><pre>${esc(f.content)}</pre></div></div></details>`;
   }).join('') : '<div class="file-empty">No proposed file edits yet.<br>Agent proposals will appear here after they inspect their workspaces.</div>';
 }
 function renderSystems() {
   const systems = state.systems;
   $('#plan-values').innerHTML = Object.entries(systems.application).map(([plan, value]) => `<div class="plan-value"><span>${esc(plan.toUpperCase())}</span><strong>${value.files_per_project}</strong><small>files per project</small></div>`).join('');
-  $('#forecast').innerHTML = `<div class="table-wrap"><table><thead><tr><th>PLAN</th><th>ACCOUNTS</th><th>FILE LIMIT</th><th>CAPACITY GiB</th></tr></thead><tbody>${systems.reporting.map(row => `<tr><td>${esc(titleCase(row.plan))}</td><td>${esc(row.accounts)}</td><td>${esc(row.files_per_project)}</td><td><strong>${esc(row.capacity_gib)}</strong></td></tr>`).join('')}</tbody></table></div>`;
+  const columns = Object.keys(systems.reporting[0] || {});
+  $('#forecast').innerHTML = columns.length ? `<div class="table-wrap"><table><thead><tr>${columns.map(name => `<th>${esc(name.replaceAll('_', ' ').toUpperCase())}</th>`).join('')}</tr></thead><tbody>${systems.reporting.map(row => `<tr>${columns.map(name => `<td>${esc(row[name])}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '<p>No report rows available. Inspect the source files below.</p>';
+  $('#workspace-files').innerHTML = Object.entries(systems.files || {}).filter(([path]) => !path.startsWith('documentation/')).map(([path, content]) => `<details class="workspace-source"><summary>${esc(path)}</summary><pre>${esc(content)}</pre></details>`).join('');
   $('#documents').innerHTML = Object.entries(systems.documentation).map(([path, content]) => `<article class="document ${path.startsWith('archive/') ? 'historical' : ''}"><span>${esc(path)}${path.startsWith('archive/') ? ' / HISTORICAL FACTS' : ''}</span><pre>${esc(content)}</pre></article>`).join('');
 }
 function renderActivity() {
@@ -208,8 +236,8 @@ function renderActivity() {
 }
 async function newChange() {
   if (busy) return;
-  if (state.api_version !== 3) {
-    error('Restart the Ripple server once to enable saved drafts, then refresh this page.');
+  if (state.api_version !== 4) {
+    error('Restart the Ripple server once to load free-text requests, then refresh this page.');
     return;
   }
   busy = true;
@@ -220,11 +248,7 @@ async function newChange() {
       saved = true;
       await refresh();
     }
-    const plan = $('#plan').value, before = state.systems.application[plan].files_per_project;
-    const next = before < 100 ? Math.min(100, before + 5) : 95;
-    $('#limit').value = next;
-    $('#request').value = `Change the ${titleCase(plan)} plan's file limit from ${before} to ${next}. Update the application, current help documentation, and storage forecast. Keep the other plan unchanged.`;
-    $('#request').dataset.generated = $('#request').value;
+    $('#request').value = '';
     $('#new-error').hidden = true;
     showDialog('new-dialog');
     if (saved) toast('Previous request saved as a draft. Create your new request.');
@@ -241,13 +265,7 @@ function connect() {
   $('#switch-key').value = '';
   $('#switch-error').hidden = true; renderConnection(); showDialog('switch-dialog');
 }
-function manualPrompt() {
-  const script = "'" + (state.workspace_root + '/ripple.py').replace(/'/g, "'\\''") + "'";
-  const c = current;
-  if (!c) return '';
-  if (phase() === 'approval') return `@ripple-app @ripple-docs @ripple-report The local reviewer approved ${c.id} in Ripple. Each of you run python3 ${script} apply ${c.id} YOUR_AREA --actor YOUR_AGENT_NAME, using your assigned area. Report the real result here. The last agent triggers actual verification.`;
-  return `@ripple-app @ripple-docs @ripple-report Change ${c.id}: ${c.request}\nStructured target: ${c.target.plan} = ${c.target.limit} files per project. Read your role under agents/ and agents/WORKFLOW.md. Inspect actual files and submit your own area's proposal with the Ripple CLI. Preserve unaffected plans and historical facts. Do not edit live files directly. Once all proposals exist, @ripple-app run python3 ${script} check ${c.id}. Wait for human review before applying.`;
-}
+function manualPrompt() {return current?.handoff_messages?.[phase()] || 'Restart the Ripple server to load the current handoff instructions.';}
 function handoff() {
   if (!current) return toast('Create a change first.');
   if (current.status === 'draft') return toast('Resume this draft before sending it to the agents.');
@@ -279,13 +297,16 @@ document.addEventListener('click', event => {
   if (close) return $('#' + close.dataset.close).close();
   const history = event.target.closest('[data-change]');
   if (history) {selectedId = history.dataset.change; current = state.changes.find(c => c.id === selectedId); render(); setTab('overview'); return;}
+  const example = event.target.closest('[data-example]');
+  if (example) {$('#request').value = example.dataset.example === 'rename' ? 'Rename Parcel to Relay in current product references. Preserve historical release notes and keep product behavior unchanged.' : 'Add a customer guide explaining how to choose a descriptive project name. Link it from the getting started guide. Keep application behavior and reporting unchanged.'; return;}
   const area = event.target.closest('[data-area]');
-  if (area) {$('#file-filter').value = area.dataset.area; renderFiles(); setTab('files'); return;}
+  if (area) {const name = area.dataset.area; if (!current.proposals[name]) {setTab('overview'); $('#impact-' + name).scrollIntoView({behavior: 'smooth', block: 'center'});} else {$('#file-filter').value = name; renderFiles(); setTab('files');} return;}
   const tabButton = event.target.closest('[data-tab]');
   if (tabButton) return setTab(tabButton.dataset.tab);
   const control = event.target.closest('[data-action]');
   if (!control || !state) return;
   const action = control.dataset.action;
+  if (action === 'impact') {setTab('overview'); $('#impact-list').scrollIntoView({behavior: 'smooth', block: 'center'}); return;}
   if (action === 'new') return newChange();
   if (action === 'connect') return connect();
   if (action === 'handoff') return handoff();
@@ -295,21 +316,10 @@ document.addEventListener('click', event => {
 $('#refresh').addEventListener('click', refresh);
 $('#history-search').addEventListener('input', renderHistory);
 $('#file-filter').addEventListener('change', renderFiles);
-function syncExampleDescription() {
-  const field = $('#request');
-  if (field.value !== field.dataset.generated) return;
-  const plan = $('#plan').value, before = state.systems.application[plan].files_per_project;
-  field.value = `Change the ${titleCase(plan)} plan's file limit from ${before} to ${$('#limit').value}. Update the application, current help documentation, and storage forecast. Keep the other plan unchanged.`;
-  field.dataset.generated = field.value;
-}
-$('#plan').addEventListener('change', syncExampleDescription);
-$('#limit').addEventListener('input', syncExampleDescription);
 $('#request-form').addEventListener('submit', async event => {
-  event.preventDefault(); const submit = event.submitter; submit.disabled = true;
+  event.preventDefault(); const submit = event.submitter || $('#request-form [data-mode=create]'); submit.disabled = true;
   try {
-    const statedPlan = $('#request').value.match(/(?:change|increase|raise|reduce|decrease|set|update)\s+(?:the\s+)?(basic|pro)(?:['’]s)?\s+(?:plan(?:['’]s)?\s+)?(?:file|upload)/i);
-    if (statedPlan && statedPlan[1].toLowerCase() !== $('#plan').value) throw new Error('The description and selected customer plan disagree. Make them match before creating the request.');
-    const result = await api('/api/changes', {request: $('#request').value, plan: $('#plan').value, limit: Number($('#limit').value), draft: submit.dataset.mode === 'draft'});
+    const result = await api('/api/changes', {request: $('#request').value, draft: submit?.dataset.mode === 'draft'});
     selectedId = result.id; $('#new-dialog').close(); await refresh(); setTab('overview');
     toast(result.status === 'draft' ? 'Request saved as a draft in your ledger.' : 'Change created. Use the next-step panel to send it to Switch.');
   } catch (exc) {error(exc, '#new-error');} finally {submit.disabled = false;}

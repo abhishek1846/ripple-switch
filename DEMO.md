@@ -1,54 +1,53 @@
 # Ripple recording
 
-Target: 2 minutes 40 seconds. The form requires under 3 minutes on YouTube or Loom, public or unlisted. Show the actual connected chat and actual resulting work. Cuts may shorten waiting, but must preserve the true order and outcomes. Label any time compression.
+Updated: 2026-11-07
 
-## Current recording path
+Target: 2 minutes 40 seconds. The form requires under three minutes on YouTube or Loom, public or unlisted. Show the actual chat and resulting work. Cuts can shorten waiting while preserving the order and outcomes.
 
-The existing request is R-5514B6. All three agents have submitted proposals and its combined checks passed. It is awaiting human review. The actual Switch connection probe passed. Finish this request before resetting anything or restarting agent sessions. Direct dispatch can send the approval; Manual handoff is also available. A complete applied result still needs verification.
+## Prepare
 
-For the preferred new-request recording, follow switch/CHAT-FIRST.md after the existing run finishes. Configure the @ripple alias and refresh agent instructions. Verify one real chat-first request before recording. Use a fresh checkout for a repeatable Basic 5-to-10 take rather than changing the active workspace behind the agents.
+The original R-5514B6 has checked proposals awaiting human approval. Finish or explicitly resolve that run before starting another. Its legacy verifier and approval remain supported. Do not reset its workspace files behind the agents.
 
-On macOS, press Command+Shift+5, choose Record Selected Portion, frame your browser window, and choose your microphone under Options. Keep Ripple and the actual shared Switch room in two browser tabs. Record a complete take; trim quiet waiting or clearly mark it as sped up. Upload the finished video to YouTube or Loom, public or unlisted, under three minutes.
+Follow switch/CHAT-FIRST.md to load the new instructions and configure the alias. Rehearse a general request in the installed room before recording. No completed native general run is claimed yet.
 
-## Before recording
+Use a fresh source checkout for repeatable starting data after the first run. Start its server on another port and point agent sessions at that checkout. Do not mix a dashboard for one checkout with agents working in another. Review links use port 8790 by default; adjust the link if using another port.
 
-- Have all three agents online in one real chat. Verify each runs `python3 ripple.py status` successfully.
-- Start Ripple in a regular Terminal: `python3 ripple.py serve`.
-- Open http://127.0.0.1:8790 and the actual messaging app side by side.
-- Confirm initial Basic limit is 5 and Pro is 25. Do not reset an active user run casually. For a clean rerun, use a fresh checkout or source package in a separate folder, start its server on another port, and point new agent sessions at that checkout.
-- Run the full real workflow before recording. Resolve native provider permission prompts rather than bypassing them.
-- Do not include tokens, private messages, or unrelated personal tabs.
+On macOS, Command+Shift+5 opens recording controls. Select the browser area and microphone. Keep Mattermost and Ripple in adjacent tabs. Hide credentials and unrelated personal material.
 
-## 0:00-0:20 - Show the problem
+## 0:00-0:20 - The request
 
-"We changed a product limit. That means the app, the help pages, and the capacity forecast all need to change. Ripple lets us say it once and follow every consequence."
+Start in Mattermost:
 
-In Workspaces, show Basic at 5. Click the ten-sample-filenames check and show its real rejection. Briefly show the guide and 3.91 GiB Basic forecast.
+```text
+@ripple Rename Parcel to Relay in current product references. Preserve historical release notes and keep product behavior unchanged.
+```
 
-## 0:20-0:45 - One request
+"A decision starts in chat. Its consequences live in other places. Ripple follows the change through the work."
 
-In the actual Mattermost room, type: `@ripple Increase the Basic plan's file limit from 5 to 10. Update the application, help docs, and storage forecast. Keep Pro unchanged.` Show the coordinator create one record and hand its ID to ripple-docs and ripple-report. Open its review link in Ripple when the proposals are ready. Use this sequence only after the chat-first setup and actual rehearsal succeed.
+## 0:20-0:55 - Discover the impact
 
-"Switch gives each agent the same conversation while it works in its own context."
+Show the coordinator create one record and hand its ID to the workspace owners through Switch. Show the actual inspections. Application and documentation explain their affected references. Reporting explains why its numeric workbook can remain unchanged, if that is what its inspection finds.
 
-## 0:45-1:25 - Show discovered consequences
+"Each owner checks its own context. A workspace can need edits, stay unchanged, or ask a question."
 
-Show actual submitted findings and before/after file edits. The documentation agent should explain why current help pages change while the archived October release note stays at its historical limit of 5. The report agent should show a real regenerated forecast.
+## 0:55-1:30 - Review
 
-"It is more than finding a number. We need current instructions and a calculation to follow the decision, while history stays accurate."
+Open the returned Ripple link. Show the assessment reasons, the proposed edits, and the acceptance conditions. Show preserved historical files. Use the observed results rather than reading a prepared success claim.
 
-Show the actual combined check result, including any failure and revision if it happened. Do not manufacture a failed run for drama.
+"The review includes what will change and why the other work stays as it is."
 
-## 1:25-1:55 - Human review and application
+## 1:30-2:05 - Apply
 
-Approve the exact checked edits in Ripple. Choose Send approval through the configured Switch connection, or copy Open approval message into that same chat. Show real agent application receipts. Keep any incomplete area visible until it finishes.
+Approve the checked bundle in Ripple and send the approval to the room. Show only affected owners applying their proposals. Show the final check against the updated files, then open the changed application and guide in Workspaces.
 
-## 1:55-2:25 - Prove the result
+## 2:05-2:30 - Another kind of change
 
-Show actual final checks. In Workspaces, demonstrate 10 accepted and 11 rejected. Pro stays 25. Show the updated guide and onboarding text, plus the actual CSV forecast at 7.81 GiB for Basic. The Pro capacity remains 6.84 GiB.
+If rehearsed and time permits, show a cut to a second actual request adding and linking a customer guide. Show its single affected owner and the resulting new file. Label the cut so it does not imply simultaneous execution. Omit this segment if it would push the recording over three minutes.
 
-## 2:25-2:40 - Explain scope
+## 2:30-2:40 - Close
 
-"This entry connects three real local workspaces through Switch. Ripple records proposed edits, human review, and checks of the completed result. Change it once. Update everything affected."
+"Write the change once. Follow the affected work through review and application."
 
-End on the public repository or its README once published. Verify the uploaded video opens in a signed-out browser before submission.
+Show the public repository: https://github.com/abhishek1846/ripple-switch. This entry connects three local workspaces through native Switch agents. General checks prove recorded acceptance conditions; human review determines whether they cover the request.
+
+Verify the uploaded video is accessible while signed out. The user must submit the form personally.

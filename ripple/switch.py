@@ -146,7 +146,13 @@ class Switch:
         script = shlex.quote(str(self.app.root / 'ripple.py'))
         cid = change['id']
         if phase == 'approval':
+            if self.app.general(change):
+                actors = {'application': 'ripple-app', 'documentation': 'ripple-docs', 'reporting': 'ripple-report'}
+                tasks = '\n'.join(f'@{actors[area]} run python3 {script} apply {cid} {area} --actor {actors[area]}' for area in self.app.required(change))
+                return f'The local reviewer approved the exact checked bundle for {cid}. Only affected agents apply their assigned proposals:\n{tasks}\nReport actual results. Unaffected workspaces stay unchanged. The final application rechecks the recorded acceptance conditions.'
             return f'@ripple-app @ripple-docs @ripple-report The local reviewer approved {cid} in Ripple. Each agent: run python3 {script} apply {cid} YOUR_AREA --actor YOUR_AGENT_NAME, using your assigned area. Report the actual result here. The final agent triggers checks against actual workspaces. Do not claim completion on a failed result.'
+        if self.app.general(change):
+            return f'@ripple-app Coordinate existing change {cid}: {change["request"]}\nRead the current agents/application/AGENTS.md and agents/WORKFLOW.md. Do not create another record. Ask @ripple-docs and @ripple-report to inspect and assess their actual workspace for {cid}; assess application yourself. Each workspace records affected, unaffected, or blocked with its reason. Only affected owners propose edits and request-specific acceptance checks. Ask the human about ambiguity. Run python3 {script} check {cid} when all assessments and affected proposals are ready. Return the review link. Wait for human approval before application.'
         return f'@ripple-app @ripple-docs @ripple-report Change {cid}: {change["request"]}\nStructured target: {change["target"]["plan"]} = {change["target"]["limit"]} files per project. Read your role under agents/ and agents/WORKFLOW.md in the Ripple checkout. Inspect your actual workspace, propose edits through the CLI, and post your findings here. Do not edit live workspace files directly. Preserve unaffected plans, source account inputs, and historical facts. After all proposals exist, @ripple-app run python3 {script} check {cid}. Wait for human approval before applying.'
 
     def dispatch(self, change_id, phase='request'):
@@ -157,7 +163,7 @@ class Switch:
             raise RippleError('Switch is not connected. Connect a room or use the visible manual handoff.')
         with self.app.state() as state:
             change = self.app._change(state, change_id)
-            if change['status'] in ('complete', 'cancelled'):
+            if change['status'] in ('no_changes', 'complete', 'cancelled'):
                 raise RippleError('This change is already closed')
             if change['status'] == 'draft':
                 raise RippleError('Resume this draft in Ripple before sending it to the agents')

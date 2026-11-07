@@ -19,13 +19,23 @@ def main(argv=None):
     switch_register.add_argument('--room-url', default='')
     start = commands.add_parser('start')
     start.add_argument('--request', required=True)
-    start.add_argument('--plan', choices=['basic', 'pro'], default='basic')
-    start.add_argument('--limit', type=int, default=10)
+    start.add_argument('--plan', choices=['basic', 'pro'], help='Optional legacy example target')
+    start.add_argument('--limit', type=int, help='Optional legacy example target')
     intake = commands.add_parser('intake', help='Coordinator registers a real human request received in the Switch room')
     intake.add_argument('--request', required=True)
-    intake.add_argument('--plan', choices=['basic', 'pro'], required=True)
-    intake.add_argument('--limit', type=int, required=True)
+    intake.add_argument('--plan', choices=['basic', 'pro'], help='Optional legacy example target')
+    intake.add_argument('--limit', type=int, help='Optional legacy example target')
     intake.add_argument('--message-id')
+    assess = commands.add_parser('assess', help='Record actual workspace impact after inspection')
+    assess.add_argument('change')
+    assess.add_argument('area', choices=list(AREAS))
+    assess.add_argument('--outcome', choices=['affected', 'unaffected', 'blocked'], required=True)
+    assess.add_argument('--reason', required=True)
+    assess.add_argument('--actor')
+    clarify = commands.add_parser('clarify', help='Record an actual human answer and reassess the request')
+    clarify.add_argument('change')
+    clarify.add_argument('--answer', required=True)
+    clarify.add_argument('--actor')
     for name in ['inspect', 'propose', 'apply']:
         command = commands.add_parser(name)
         command.add_argument('change')
@@ -60,6 +70,10 @@ def main(argv=None):
             result = app.start(args.request, args.plan, args.limit, origin='mattermost', source_message_id=args.message_id)
         elif args.command == 'inspect':
             result = app.inspect(args.change, args.area, args.actor, args.room_url)
+        elif args.command == 'assess':
+            result = app.assess(args.change, args.area, args.outcome, args.reason, args.actor)
+        elif args.command == 'clarify':
+            result = app.clarify(args.change, args.answer, args.actor)
         elif args.command == 'propose':
             result = app.propose(args.change, args.area, json.loads(args.patch.read_text()), args.summary, args.actor)
         elif args.command == 'apply':

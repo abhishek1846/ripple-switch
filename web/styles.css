@@ -7,3 +7,21 @@
 @media(max-width:720px){.breadcrumb{font-size:9px}.connection-button{font-size:8px}.route-node .node-type{font-size:6px}.route-node strong{font-size:10px}.decision-node strong{font-size:18px}.switch-node strong{font-size:14px}.route-node small{font-size:7px}.route-legend{font-size:8px}.tab{font-size:10px}.impact-name strong{font-size:10px}.impact-detail{font-size:10px}.impact-name small{font-size:7px}.request-quote{font-size:11px}.section-index{font-size:8px}.file-diff summary{font-size:9px}.next-step{gap:12px}.next-step .step-buttons{justify-content:flex-start}.stat,.stat strong{font-size:9px}}
 
 .composer-actions{display:flex;gap:9px}.history-item small{line-height:1.7}.status-label.draft{color:#838776}.status-label.draft:before{border-color:#a6ad98;background:transparent}@media(max-width:720px){.composer-actions{width:100%}.composer-actions .button{flex:1}}
+
+/* Free-text requests share the existing ledger and evidence surfaces. */
+.request-examples {display:flex; align-items:center; flex-wrap:wrap; gap:8px; margin:14px 0; font-size:12px; color:var(--muted)}
+.request-examples button {border:1px solid var(--line); border-radius:4px; padding:7px 10px; background:transparent; font:inherit; color:var(--ink); cursor:pointer}
+.request-examples button:hover {background:var(--paper)}
+.decision-text {font-size:16px; line-height:1.55; margin:18px 0 12px; overflow-wrap:anywhere}
+.scope-stats button.stat {width:100%; border:0; padding:8px 0; background:transparent; text-align:left; font:inherit; color:inherit; cursor:pointer}
+.scope-stats button.stat:hover span {text-decoration:underline}
+.history-item>span:last-child {min-width:0}
+.history-item strong {display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.route-node.unaffected {background:transparent; border-style:dashed}
+.route-node small {overflow-wrap:anywhere}
+.impact-row.unaffected .impact-state {color:var(--muted)}
+.impact-row.blocked {border-left:3px solid var(--orange); padding-left:12px}
+.impact-reason,.check-scope {font-size:12px; line-height:1.6; color:var(--muted)}
+.workspace-source {margin-top:12px; border-top:1px solid var(--line); padding-top:12px; min-width:0}
+.workspace-source summary {cursor:pointer; font-size:12px; overflow-wrap:anywhere}
+.workspace-source pre {white-space:pre-wrap; overflow-wrap:anywhere; font-size:12px; line-height:1.6; max-height:420px; overflow:auto}
