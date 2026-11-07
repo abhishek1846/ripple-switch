@@ -229,7 +229,7 @@ async function newChange() {
     showDialog('new-dialog');
     if (saved) toast('Previous request saved as a draft. Create your new request.');
   } catch (exc) {error(exc);}
-  finally {busy = false;}
+  finally {busy = false; if (current) renderNextStep();}
 }
 
 function connect() {
