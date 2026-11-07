@@ -2,6 +2,12 @@
 
 Target: 2 minutes 40 seconds. The form requires under 3 minutes on YouTube or Loom, public or unlisted. Show the actual connected chat and actual resulting work. Cuts may shorten waiting, but must preserve the true order and outcomes. Label any time compression.
 
+## Current recording path
+
+The existing request is R-5514B6. No agent inspections or proposals have been recorded yet. Direct API dispatch is not configured on this checkout. Use Manual handoff to copy the exact request into the real Switch room, then use it again after approval to copy the approval message. The interface labels this as manual handoff, without claiming a verified direct API connection.
+
+On macOS, press Command+Shift+5, choose Record Selected Portion, frame your browser window, and choose your microphone under Options. Keep Ripple and the actual shared Switch room in two browser tabs. Record a complete take; trim quiet waiting or clearly mark it as sped up. Upload the finished video to YouTube or Loom, public or unlisted, under three minutes.
+
 ## Before recording
 
 - Have all three agents online in one real chat. Verify each runs `python3 ripple.py status` successfully.
@@ -15,11 +21,11 @@ Target: 2 minutes 40 seconds. The form requires under 3 minutes on YouTube or Lo
 
 "We changed a product limit. That means the app, the help pages, and the capacity forecast all need to change. Ripple lets us say it once and follow every consequence."
 
-In Connected Work, show Basic at 5. Click the ten-sample-filenames check and show its real rejection. Briefly show the guide and 3.91 GiB Basic forecast.
+In Workspaces, show Basic at 5. Click the ten-sample-filenames check and show its real rejection. Briefly show the guide and 3.91 GiB Basic forecast.
 
 ## 0:20-0:45 - One request
 
-Start the Basic 5-to-10 change. Copy its request into the actual Switch room. Show the agent names and their real inspection replies.
+Select the existing Basic 5-to-10 change. Choose Manual handoff, copy the request, and paste it into the actual shared Switch room containing ripple-app, ripple-docs, and ripple-report. Show the agent names and their real inspection replies.
 
 "Switch gives each agent the same conversation while it works in its own context."
 
@@ -33,11 +39,11 @@ Show the actual combined check result, including any failure and revision if it 
 
 ## 1:25-1:55 - Human review and application
 
-Approve the exact checked edits in Ripple. Copy the approval message into chat. Show real agent application receipts. Keep any incomplete area visible until it finishes.
+Approve the exact checked edits in Ripple. Choose Open approval message, copy it, and paste it into that same chat. Show real agent application receipts. Keep any incomplete area visible until it finishes.
 
 ## 1:55-2:25 - Prove the result
 
-Show actual final checks. In Connected Work, demonstrate 10 accepted and 11 rejected. Pro stays 25. Show the updated guide and onboarding text, plus the actual CSV forecast at 7.81 GiB for Basic. The Pro capacity remains 6.84 GiB.
+Show actual final checks. In Workspaces, demonstrate 10 accepted and 11 rejected. Pro stays 25. Show the updated guide and onboarding text, plus the actual CSV forecast at 7.81 GiB for Basic. The Pro capacity remains 6.84 GiB.
 
 ## 2:25-2:40 - Explain scope
 

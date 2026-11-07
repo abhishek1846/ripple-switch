@@ -74,9 +74,9 @@ function renderHistory() {
 }
 function renderConnection() {
   const c = connection();
-  const label = c.connected ? 'Switch verified' : c.configured ? 'Switch needs attention' : 'Switch not connected';
+  const label = c.connected ? 'Switch verified' : c.configured ? 'Switch needs attention' : 'Switch / manual handoff';
   $('#switch-badge').innerHTML = `<span class="status-dot ${c.connected ? 'green' : ''}"></span>${esc(label)} <span>↗</span>`;
-  $('#rail-switch-state').textContent = c.connected ? 'Room access verified' : c.configured ? 'Saved / not verified' : 'Not connected';
+  $('#rail-switch-state').textContent = c.connected ? 'Room access verified' : c.configured ? 'Saved / not verified' : 'Manual handoff available';
   $('#rail-switch-dot').className = 'status-dot ' + (c.connected ? 'green' : '');
   const room = safeURL(c.room_url);
   $('#open-room').hidden = !room;
@@ -108,14 +108,14 @@ function renderChange() {
 function renderMap() {
   const c = current, sw = connection(), sent = c.dispatches?.request?.status === 'sent';
   const activity = Object.keys(c.inspections).length > 0;
-  const switchLabel = sent ? 'Request accepted' : sw.connected ? 'Room verified' : 'Not connected';
+  const switchLabel = sent ? 'Request accepted' : sw.connected ? 'Room verified' : sw.configured ? 'Connection unavailable' : 'Manual handoff';
   $('#route-map').innerHTML = `<svg class="route-wires" viewBox="0 0 1000 300" preserveAspectRatio="none" aria-hidden="true"><path class="${sent ? 'dispatched' : ''}" d="M160 150 H440"/><path d="M440 150 H610 Q625 150 625 135 V69 Q625 54 640 54 H790"/><path d="M440 150 H790"/><path d="M440 150 H610 Q625 150 625 165 V231 Q625 246 640 246 H790"/></svg><div class="route-node decision-node"><span class="node-type">YOUR DECISION <span>↗</span></span><strong>${c.before} → ${c.target.limit} files</strong><small>${esc(titleCase(c.target.plan))} plan</small></div><button class="route-node switch-node" data-action="connect"><span class="node-type">SHARED ROOM <span>↔</span></span><strong>Switch</strong><small>${esc(switchLabel)}</small></button>${areas.map(area => {
     const proposed = c.proposals[area], inspected = c.inspections[area], applied = c.applied[area];
     const status = applied ? 'Applied to workspace' : proposed ? `${proposed.files.length} file edits proposed` : inspected ? 'Inspection received' : 'No tool activity yet';
     return `<button class="route-node agent-node area-${area} ${applied ? 'applied' : ''}" data-area="${area}"><span class="node-type">${esc(actors[area])} <span class="status-dot ${applied ? 'green' : proposed ? 'orange' : ''}"></span></span><strong>${esc(names[area])}</strong><small>${esc(status)}</small></button>`;
   }).join('')}`;
-  $('#route-mode').textContent = sent ? 'Real Switch dispatch recorded' : activity ? 'Actual tool activity received' : 'No dispatch recorded';
-  $('#transport-summary').textContent = sent ? `Switch accepted the request for room ${c.dispatches.request.room_id}. Replies are in the actual room; tool results appear here.` : sw.connected ? 'The server, dispatch identity, and room were tested. Send this change to begin the agent workflow.' : 'No Switch request has been sent. Connect a room or use the manual handoff to begin.';
+  $('#route-mode').textContent = sent ? 'Real Switch dispatch recorded' : activity ? 'Actual tool activity received' : 'No API dispatch recorded';
+  $('#transport-summary').textContent = sent ? `Switch accepted the request for room ${c.dispatches.request.room_id}. Replies are in the actual room; tool results appear here.` : sw.connected ? 'The server, dispatch identity, and room were tested. Send this change to begin the agent workflow.' : activity ? 'Actual workspace tool activity has arrived. Review your real Switch room for the conversation. Direct API dispatch is not configured.' : 'Direct API dispatch is not configured. Use Manual handoff to send the request into your real Switch room.';
 }
 function button(text, action, style = '') {return `<button class="button compact ${style}" data-action="${action}" ${busy ? 'disabled' : ''}>${esc(text)}</button>`;}
 function renderNextStep() {
@@ -139,13 +139,21 @@ function renderNextStep() {
     heading = phase() === 'approval' ? 'Approval sent. Waiting for application.' : count ? `${count} of 3 workspaces have reported an inspection.` : 'Switch accepted your request. Waiting for agents.';
     detail = phase() === 'approval' ? `${Object.keys(c.applied).length} of 3 workspaces applied. Each agent will post its result in the room.` : 'The next update comes from a real agent tool call. If nothing arrives, check that the three sessions are running in Console.';
     buttons = button('Connection details ↗', 'connect'); style = 'waiting'; icon = '↳';
+  } else if (!sw.configured && c.approval) {
+    heading = 'Approved. Send the decision to your Switch room.';
+    detail = 'Open the manual handoff, copy the approval message, and paste it into the same real chat. Each agent will apply its own reviewed changes.';
+    buttons = button('Open approval message ↗', 'handoff', 'accent');
+  } else if (Object.keys(c.inspections).length && !sw.configured) {
+    heading = `${Object.keys(c.inspections).length} of 3 workspaces have reported an inspection.`;
+    detail = 'Actual agent tool activity has arrived. Follow the conversation in your Switch room while the remaining proposals are prepared.';
+    buttons = button('View proposed files ↗', 'files'); style = 'waiting'; icon = '↳';
   } else if (sw.configured) {
     heading = phase() === 'approval' ? 'Send your approval to the working agents.' : 'Ready to send this change to Switch.';
     detail = r?.status === 'failed' ? r.message : 'This sends a real message to the configured room. Your three working agent sessions must be running.';
     buttons = button(busy ? 'Sending…' : phase() === 'approval' ? 'Send approval ↗' : 'Send to Switch ↗', 'dispatch', 'accent');
   } else {
-    heading = 'Your change is saved. Connect Switch to start the work.';
-    detail = 'No agent has been started or notified by this page. Connect a room, or copy the handoff into an existing Switch chat.';
+    heading = 'Your change is saved. Send it to your Switch room.';
+    detail = 'Manual handoff copies the exact request for your existing Switch room. Configure direct dispatch if you prefer sending from this page.';
     buttons = button('Manual handoff', 'handoff') + button('Connect Switch ↗', 'connect', 'accent');
   }
   const cancel = !Object.keys(c.applied).length && !['complete', 'cancelled'].includes(c.status) ? '<button class="text-button" data-action="cancel">Cancel</button>' : '';

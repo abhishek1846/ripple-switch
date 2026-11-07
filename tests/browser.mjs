@@ -61,6 +61,9 @@ try {
   await page.locator('[data-tab=systems]').click();
   await page.locator('#test-ten').click();
   await page.waitForFunction(() => document.querySelector('#validation-result').classList.contains('rejected'));
+  await fixture(`import sys\nfrom pathlib import Path\nfrom ripple.core import Ripple\nRipple(Path.cwd()).inspect(sys.argv[1], 'application', actor='browser test fixture')`, cid);
+  await page.locator('[data-tab=overview]').click();
+  await page.waitForFunction(() => document.querySelector('#next-step').textContent.includes('1 of 3 workspaces have reported an inspection'));
   await fixture(`import sys\nfrom pathlib import Path\nsys.path.insert(0,'tests')\nfrom test_workflow import WorkflowTests\nfrom ripple.core import Ripple\nf=WorkflowTests(); f.root=Path.cwd(); f.app=Ripple(f.root); f.cid=sys.argv[1]\nfor area, patch in f.patches().items(): f.app.propose(f.cid,area,patch,'Browser test fixture: update '+area,actor='browser test fixture')`, cid);
   await page.locator('[data-tab=overview]').click();
   await page.waitForFunction(() => document.querySelector('#next-step').textContent.includes('proposals are ready'));
@@ -74,6 +77,10 @@ try {
   await page.locator('[data-tab=overview]').click();
   await page.locator('[data-action=approve]').click();
   await page.waitForFunction(() => document.querySelector('#change-status').textContent === 'Approved');
+  await page.locator('#next-step [data-action=handoff]').click();
+  await visible('#handoff-dialog');
+  assert.match(await page.locator('#handoff-message').inputValue(), /approved/);
+  await page.keyboard.press('Escape');
   await fixture(`import sys\nfrom pathlib import Path\nfrom ripple.core import Ripple,AREAS\na=Ripple(Path.cwd())\nfor area in AREAS: a.apply(sys.argv[1],area,actor='browser test fixture')`, cid);
   await page.waitForFunction(() => document.querySelector('#change-status').textContent === 'Verified');
   await page.locator('[data-tab=systems]').click();
