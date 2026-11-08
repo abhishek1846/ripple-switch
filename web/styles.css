@@ -59,3 +59,9 @@
   .route-source {grid-template-columns:1fr 1fr}
   .route-workspaces {grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
 }
+
+.delivery-panel {margin:18px 0; padding:16px; border:1px solid var(--line); background:var(--green-pale); font-size:12px}
+.delivery-panel p {line-height:1.6; margin:8px 0; color:#535b4b}
+.delivery-repository {display:flex; flex-wrap:wrap; gap:12px; align-items:center; margin-top:10px}
+.delivery-repository code {overflow-wrap:anywhere; font-size:12px}
+.delivery-repository p {flex-basis:100%}

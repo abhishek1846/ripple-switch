@@ -2,7 +2,7 @@
 
 Updated: 2026-11-08
 
-Use the company's configured project root and workspace identifiers from `ripple.json`. Its optional agent roster records responsibilities and instruction paths. Agents and workspaces are independent: an agent can cover several workspaces, and several agents can share one workspace. The role files under `agents/application`, `agents/documentation`, and `agents/reporting` belong to the bundled example.
+Use the company's configured project root and workspace identifiers from `ripple.json`. Its optional agent roster records responsibilities and instruction paths. The optional MCP tools expose the same workflow and validation. Approval and publication remain reviewer actions. Agents and workspaces are independent: an agent can cover several workspaces, and several agents can share one workspace. The role files under `agents/application`, `agents/documentation`, and `agents/reporting` belong to the bundled example.
 
 Run commands from the project directory. Prefix the commands below with `python3 /absolute/path/to/ripple/ripple.py`, or use `python3 ripple.py` when working in the Ripple source checkout. From another directory, add `--root /absolute/project/path` before the command. Actor labels are caller-supplied trace metadata, not authentication.
 
@@ -17,7 +17,7 @@ inspect CHANGE_ID AREA --actor YOUR_AGENT_NAME
 assess CHANGE_ID AREA --outcome affected --reason "Your finding" --actor YOUR_AGENT_NAME
 ```
 
-Read the actual request, clarifications, and returned files before assessing. The alternatives to `affected` are `unaffected` and `blocked`.
+Read the actual request, clarifications, and returned files before assessing. Use the returned workspace_path for project tests. In Git delivery, it is the isolated checkout; do not substitute the source folder. The alternatives to `affected` are `unaffected` and `blocked`.
 
 Every configured workspace needs one assessment. Unaffected workspaces need no patch. If details are missing, record a blocked question and ask the human. Record the actual answer with `clarify CHANGE_ID --answer "The human's answer"`. Clarification resets inspections, assessments, proposals, checks, and approval so agents can reassess the updated request.
 
@@ -68,7 +68,7 @@ When all workspaces have assessments, no questions remain blocked, and affected 
 
 The person reviews highlighted diffs, complete file contents, and acceptance coverage in the dashboard. Return a link using the dashboard's actual port, for example `http://127.0.0.1:8790/#change=CHANGE_ID&tab=files`. Wait for approval. Never approve for the human.
 
-Apply only affected workspaces with `apply CHANGE_ID AREA --actor YOUR_AGENT_NAME`. The last affected application checks a fresh snapshot of the resulting files. Read the result before reporting completion. A failed or partial result remains incomplete.
+Apply only affected workspaces with `apply CHANGE_ID AREA --actor YOUR_AGENT_NAME`. The last affected application checks a fresh snapshot of the resulting files. Git delivery applies to isolated branches; a verified Git request is ready for publication and review, not already merged. The reviewer runs publish CHANGE_ID or uses Publish branches / PRs in the dashboard. Do not publish or approve on behalf of the human. Read the result before reporting completion. A failed or partial result remains incomplete.
 
 Use your existing CLI coordination or your configured Switch room. Ripple's handoff messages derive agent names and workspace assignments from configuration. Successful dispatch is not proof that agents have acted. Keep normal provider permissions enabled.
 

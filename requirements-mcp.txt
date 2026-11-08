@@ -1,0 +1,3 @@
+# Optional adapter only. The core CLI and Git delivery use the standard library.
+# MCP SDK 2.3.0 supports Python 3.10+ and native/legacy protocol negotiation.
+mcp==2.3.0

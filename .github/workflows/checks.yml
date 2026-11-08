@@ -19,6 +19,10 @@ jobs:
           node-version: '22'
       - name: Workflow and transport tests
         run: python3 -m unittest discover -s tests -v
+      - name: Optional MCP SDK
+        run: python3 -m pip install -r requirements-mcp.txt
+      - name: Native MCP stdio protocol
+        run: python3 -m unittest discover -s tests -p test_mcp.py -v
       - name: JavaScript syntax
         run: node --check web/app.js
       - name: Configurable dashboard rendering

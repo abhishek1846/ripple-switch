@@ -40,7 +40,7 @@ for (const [workspaceCount, agentCount] of [[1, 7], [5, 2], [12, 64]]) {
   const files = Object.fromEntries(ids.map(area => [area + '/policy.md', '# Policy\n']));
   const change = {id: 'R-COMPANY', kind: 'general', request: 'Revise company policies.', target: {}, status: 'discovering', created: new Date().toISOString(),
     workspace_config: areas, proposals: {}, inspections: {}, assessments: {}, applied: {}, approval: null, check: null, required_areas: [], clarifications: []};
-  const state = {api_version: 5, name: 'Company project', areas, agents, changes: [change], events: [], switch: {configured: false, connected: false},
+  const state = {api_version: 6, name: 'Company project', areas, agents, changes: [change], events: [], switch: {configured: false, connected: false},
     systems: {files, application: {}, documentation: {}, reporting: []}, example: null};
   const document = documentFromSource();
   const context = vm.createContext({document, URL, URLSearchParams, location: {hash: ''}, history: {replaceState() {}},

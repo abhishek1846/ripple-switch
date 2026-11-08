@@ -3,7 +3,7 @@ import json
 import secrets
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from .core import RippleError
 
@@ -37,6 +37,8 @@ def mutate(app, path, data):
     pieces = path.strip('/').split('/')
     if len(pieces) == 4 and pieces[:2] == ['api', 'changes']:
         change, action = pieces[2:]
+        if action == 'publish':
+            return app.publish(change, data.get('remote', 'origin'), data.get('base'), data.get('push_only', False))
         if action == 'check':
             return app.check(change)
         if action == 'approve':
@@ -82,7 +84,7 @@ def serve(app, port=8790):
             path = urlparse(self.path).path
             try:
                 if path == '/api/state':
-                    return self.respond(200, json.dumps(app.status()))
+                    return self.respond(200, json.dumps(app.status(parse_qs(urlparse(self.path).query).get('change', [None])[0])))
                 assets = {'/': ('index.html', 'text/html; charset=utf-8'), '/app.js': ('app.js', 'text/javascript; charset=utf-8'), '/styles.css': ('styles.css', 'text/css; charset=utf-8'), '/favicon.svg': ('favicon.svg', 'image/svg+xml')}
                 if path not in assets:
                     return self.respond(404, '{"error":"Not found"}')
