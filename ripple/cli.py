@@ -11,7 +11,14 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description='Ripple: reviewed changes across your configured workspaces.')
     parser.add_argument('--root', type=Path, help='Project root. Defaults to the current directory.')
     commands = parser.add_subparsers(dest='command', required=True)
-    commands.add_parser('init', help='Initialize ripple.json configuration in workspace')
+    init = commands.add_parser('init', help='Initialize ripple.json configuration in workspace')
+    init.add_argument('--delivery', choices=['direct', 'git'], default='direct')
+    commands.add_parser('mcp', help='Serve optional native MCP tools over local stdio')
+    publish = commands.add_parser('publish', help='Publish verified Git branches and open GitHub pull requests')
+    publish.add_argument('change')
+    publish.add_argument('--remote', default='origin')
+    publish.add_argument('--base')
+    publish.add_argument('--push-only', action='store_true')
     commands.add_parser('status')
     switch_test = commands.add_parser('switch-test')
     switch_register = commands.add_parser('switch-register')
@@ -58,7 +65,13 @@ def main(argv=None):
         root = args.root or Path.cwd()
         app = Ripple(root)
         if args.command == 'init':
-            result = app.init_project()
+            result = app.init_project(args.delivery)
+        elif args.command == 'mcp':
+            from .mcp_server import serve_mcp
+            serve_mcp(app)
+            return
+        elif args.command == 'publish':
+            result = app.publish(args.change, args.remote, args.base, args.push_only)
         elif args.command == 'status':
             result = app.status()
         elif args.command == 'switch-test':

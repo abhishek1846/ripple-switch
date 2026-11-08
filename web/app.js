@@ -18,6 +18,7 @@ const phase = () => current?.approval ? 'approval' : 'request';
 const receipt = () => current?.dispatches?.[phase()];
 const general = c => c?.kind === 'general';
 const required = c => c?.required_areas || areas;
+const statusLabel = c => c.status === 'complete' && c.git_delivery ? c.git_delivery.status === 'published' ? 'Git published' : 'Verified in Git' : labels[c.status] || c.status;
 const closed = c => ['no_changes', 'complete', 'cancelled'].includes(c.status);
 const shortRequest = c => {const line = c.request.split('\n')[0]; const first = line.match(/^.*?[.!?](?:\s|$)/)?.[0].trim() || line; return first.length > 80 ? first.slice(0, 77).trimEnd() + '...' : first;};
 const changeTitle = c => general(c) ? shortRequest(c) : `${titleCase(c.target.plan)} file limit: ${c.before} to ${c.target.limit}`;
@@ -57,14 +58,14 @@ async function refresh() {
   if (refreshing) return;
   refreshing = true;
   try {
-    const next = await api('/api/state');
+    const next = await api('/api/state' + (selectedId ? '?change=' + encodeURIComponent(selectedId) : ''));
     const changed = JSON.stringify(next) !== JSON.stringify(state);
     state = next;
     areas = Object.keys(state.areas);
     names = Object.fromEntries(Object.entries(state.areas).map(([area, info]) => [area, info.title]));
     current = state.changes.find(c => c.id === selectedId) || [...state.changes].reverse().find(c => c.status !== 'cancelled') || null;
     if (current) selectedId = current.id;
-    $('#restart-notice').hidden = state.api_version === 5;
+    $('#restart-notice').hidden = state.api_version === 6;
     $('#local-server-state').textContent = 'Local workspace server available';
     if (changed) render();
   } catch (exc) {
@@ -86,7 +87,7 @@ function renderHistory() {
   const query = $('#history-search').value.toLowerCase();
   const changes = [...state.changes].reverse().filter(c => `${c.id} ${c.request} ${c.target?.plan || ""}`.toLowerCase().includes(query));
   $('#history-count').textContent = String(state.changes.length).padStart(2, '0');
-  $('#history').innerHTML = changes.length ? changes.map(c => `<button class="history-item ${c.id === current?.id ? 'selected' : ''}" data-change="${esc(c.id)}"><span class="status-dot ${c.status === 'complete' ? 'green' : ['cancelled', 'draft', 'no_changes'].includes(c.status) ? '' : 'orange'}"></span><span><strong>${esc(general(c) ? shortRequest(c) : titleCase(c.target.plan) + ": " + c.before + " → " + c.target.limit + " files")}</strong><small>${esc(c.id)} / ${esc(labels[c.status])}</small></span></button>`).join('') : '<p class="history-empty">No changes here yet.<br>Create a change to begin.</p>';
+  $('#history').innerHTML = changes.length ? changes.map(c => `<button class="history-item ${c.id === current?.id ? 'selected' : ''}" data-change="${esc(c.id)}"><span class="status-dot ${c.status === 'complete' ? 'green' : ['cancelled', 'draft', 'no_changes'].includes(c.status) ? '' : 'orange'}"></span><span><strong>${esc(general(c) ? shortRequest(c) : titleCase(c.target.plan) + ": " + c.before + " → " + c.target.limit + " files")}</strong><small>${esc(c.id)} / ${esc(statusLabel(c))}</small></span></button>`).join('') : '<p class="history-empty">No changes here yet.<br>Create a change to begin.</p>';
 }
 function renderConnection() {
   const c = connection();
@@ -110,8 +111,9 @@ function renderChange() {
   $('#change-title').textContent = changeTitle(c);
   $('#request-origin').textContent = c.origin === 'mattermost' ? 'From Mattermost' : 'Created in Ripple';
   $('#change-created').textContent = `Created ${time(c.created)}`;
-  $('#change-status').textContent = labels[c.status] || c.status;
+  $('#change-status').textContent = statusLabel(c);
   $('#change-status').className = 'status-label ' + c.status;
+  renderDelivery(c);
   $('#change-request').textContent = c.request + (c.clarifications || []).map(item => '\nClarification: ' + item.answer).join('');
   $('#decision-numbers').hidden = general(c);
   $('#decision-text').hidden = !general(c);
@@ -129,6 +131,16 @@ function renderChange() {
   $('#tab-file-count').textContent = files;
   $('#tab-event-count').textContent = events().length;
   renderMap(); renderNextStep(); renderImpact(); renderChecks(); renderFiles();
+}
+function renderDelivery(change) {
+  const delivery = change.git_delivery;
+  $('#delivery-panel').hidden = !delivery;
+  if (!delivery) return;
+  const repositories = Object.values(delivery.repositories);
+  $('#delivery-panel').innerHTML = `<strong>Isolated Git delivery</strong><p>Git workspace edits stay on these branches. Publish them for review; Ripple does not merge them or update the source files.</p>${repositories.map(repo => {
+    const url = safeURL(repo.pull_request);
+    return `<div class="delivery-repository"><code>${esc(repo.branch)}</code><span>${esc(repo.status)}</span>${url ? `<a href="${esc(url)}" target="_blank" rel="noreferrer">Review pull request ↗</a>` : ''}${repo.error ? `<p class="inline-error">${esc(repo.error)}</p>` : ''}</div>`;
+  }).join('')}`;
 }
 function renderMap() {
   const c = current, sw = connection(), sent = c.dispatches?.request?.status === 'sent';
@@ -167,6 +179,11 @@ function renderNextStep() {
     heading = 'A workspace needs your answer.';
     detail = 'Read the question below. Reply through your coordinator or record your answer with the clarify command before reassessment.';
     buttons = button('View the question', 'impact');
+  } else if (c.status === 'complete' && c.git_delivery) {
+    const published = c.git_delivery.status === 'published';
+    heading = published ? 'Git branches published for review.' : c.git_delivery.status === 'publish_failed' ? 'Git publication needs attention.' : 'Verified on isolated Git branches.';
+    detail = published ? 'Review the linked pull requests and project CI. Merge through your Git review process. Ripple has not updated the source checkout.' : 'Publish pushes the reviewed branches and opens GitHub pull requests. Other Git remotes receive branches for your review process.';
+    buttons = button('Inspect branch files', 'systems') + (published ? '' : button(c.git_delivery.status === 'publish_failed' ? 'Retry publication ↗' : 'Publish branches / PRs ↗', 'publish', 'accent'));
   } else if (c.status === 'complete') {
     heading = 'The affected work is complete.';
     detail = general(c) ? `${required(c).length} affected ${required(c).length === 1 ? "workspace applied its proposal" : "workspaces applied their proposals"}. The recorded acceptance conditions pass against the updated files.` : 'All affected areas applied their edits. The final checks passed against actual files and application behavior.';
@@ -264,7 +281,7 @@ function renderSystems() {
   $('#example-systems').hidden = state.example !== 'parcel';
   $('#workspace-files').innerHTML = Object.keys(state.areas).map(area => {
     const files = Object.entries(systems.files || {}).filter(([path]) => path.startsWith(area + '/'));
-    return `<section class="workspace-group"><h3>${esc(state.areas[area].title)}</h3><p>${esc(state.areas[area].path)}</p>${files.map(([path, content]) => `<details class="workspace-source"><summary>${esc(path)}</summary><pre>${esc(content)}</pre></details>`).join('') || '<p>No supported text files in this workspace.</p>'}</section>`;
+    return `<section class="workspace-group"><h3>${esc(state.areas[area].title)}</h3><p>${esc(systems.workspaces?.[area]?.effective_path || state.areas[area].path)}</p>${files.map(([path, content]) => `<details class="workspace-source"><summary>${esc(path)}</summary><pre>${esc(content)}</pre></details>`).join('') || '<p>No supported text files in this workspace.</p>'}</section>`;
   }).join('');
   $('#documents').innerHTML = Object.entries(systems.documentation).map(([path, content]) => `<article class="document ${path.startsWith('archive/') ? 'historical' : ''}"><span>${esc(path)}${path.startsWith('archive/') ? ' / HISTORICAL FACTS' : ''}</span><pre>${esc(content)}</pre></article>`).join('');
 }
@@ -276,7 +293,7 @@ function renderActivity() {
 }
 async function newChange() {
   if (busy) return;
-  if (state.api_version !== 5) {
+  if (state.api_version !== 6) {
     error('Restart the Ripple server once to load free-text requests, then refresh this page.');
     return;
   }
@@ -326,7 +343,8 @@ async function runAction(action) {
       if (action === 'approve') toast('Approved. Your agents can apply the affected proposals.');
       if (action === 'cancel') toast('Cancelled before application. The record is preserved.');
       if (action === 'check') toast('Combined check finished. Review the actual results.');
-      if (action === 'resume') toast('Draft resumed. Send it to Switch when ready.');
+      if (action === 'resume') toast('Draft resumed. Give it to your agents when ready.');
+      if (action === 'publish') toast('Git branches published. Review their pull requests before merging.');
     }
     await refresh();
   } catch (exc) {error(exc); await refresh();}
@@ -341,7 +359,7 @@ document.addEventListener('click', event => {
     current = state.changes.find(c => c.id === selectedId);
     $('.rail').classList.remove('history-open');
     $('#mobile-history-toggle').setAttribute('aria-expanded', 'false');
-    render(); setTab('overview'); return;
+    render(); setTab('overview'); refresh(); return;
   }
   const example = event.target.closest('[data-example]');
   if (example) {$('#request').value = example.dataset.example === 'rename' ? 'Rename Parcel to Relay in current product references. Preserve historical release notes and keep product behavior unchanged.' : 'Add a customer guide explaining how to choose a descriptive project name. Link it from the getting started guide. Keep application behavior and reporting unchanged.'; return;}

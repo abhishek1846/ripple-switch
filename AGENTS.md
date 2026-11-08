@@ -10,6 +10,8 @@ Ripple coordinates reviewed changes across company-configured workspaces. Agents
 - Run `python3 ripple.py --help` for tools. Read agents/WORKFLOW.md for the proposal protocol.
 - Inspect actual files. General requests require an impact assessment for each workspace and proposals only for affected workspaces. Agents sharing a workspace coordinate one current proposal.
 - Propose changes through the CLI. Do not edit live workspace files while preparing a proposal.
+- Git delivery uses one isolated branch per repository per request. Use the workspace_path returned by inspection for project tests. Leave source checkout files untouched in Git mode.
+- MCP delegates to the same core. Never expose human approval or Git publication as agent tools.
 - The human approves the checked proposals before application. Proposal revisions revoke approval.
 - Existing plan-limit records retain their legacy example workflow and approval bundles.
 - Agent labels are trace metadata. CLI file boundaries are enforced by Ripple, not an operating-system sandbox.

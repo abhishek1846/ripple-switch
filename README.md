@@ -9,7 +9,7 @@ Updated: 2026-11-08
 
 Ripple coordinates reviewed edits across a company's project workspaces. Each workspace is inspected for impact. Agents propose changes and acceptance checks. A person reviews the diffs before approving application.
 
-You choose the workspaces and the agents. There is no fixed agent count or required set of departments. Several agents can collaborate on one workspace, and one agent can work across several workspaces. CLI agents can use Ripple directly. Switch adds optional chat coordination.
+You choose the workspaces and the agents. There is no fixed agent count or required set of departments. Several agents can collaborate on one workspace, and one agent can work across several workspaces. Agents can use the CLI or native MCP tools. Switch adds optional chat coordination.
 
 The included Parcel project shows one configuration with application, documentation, and reporting agents. A request could be:
 
@@ -130,6 +130,68 @@ Use the returned change ID in subsequent commands. Give each participating agent
 
 Prefix each command with `python3 /path/to/ripple/ripple.py`. Approval is performed by the person in the dashboard. The [workflow guide](agents/WORKFLOW.md) specifies proposal JSON and acceptance conditions.
 
+## Isolate changes with Git
+
+Choose Git delivery when your review process uses branches and pull requests. Direct-file delivery remains the default for existing configurations and non-Git workspaces.
+
+For a new project:
+
+```bash
+python3 /path/to/ripple/ripple.py init --delivery git
+```
+
+For an existing configuration, add `"delivery": "git"` at the top level. A workspace can override that with its own `"delivery": "direct"` or `"delivery": "git"`. Workspaces and agent assignments keep the same format.
+
+Start from a clean Git checkout. Ripple creates an isolated worktree and branch for each repository in the request. Several affected workspaces in one monorepo share one branch and one PR. Separate repositories get separate branches linked to the same Ripple change ID. Ripple never stashes your unfinished work.
+
+Inspection returns the actual `workspace_path`. In Git delivery, use that isolated path for project tests. Proposals still go through Ripple, and application still requires human approval. Git-mode application writes only the isolated worktree. Your original files and checked-out branch stay in place, so you can continue working there.
+
+After the affected proposals are applied and verified, the reviewer can choose **Publish branches / PRs** in the dashboard, or run:
+
+```bash
+python3 /path/to/ripple/ripple.py publish CHANGE_ID
+```
+
+This commits the reviewed files and pushes each affected repository's Ripple branch. GitHub remotes also get a pull request using the optional `gh` CLI and your existing sign-in. Other Git remotes receive branches for your own review process. Use `--push-only` to skip automatic PR creation, `--remote NAME` for another configured remote, or `--base BRANCH` for a PR base.
+
+Publishing does not merge anything or update the source checkout. Review the PR and project CI before merging. A PR base must contain the request's starting commit; Ripple refuses to publish unrelated local history as part of a GitHub PR. Worktree changes outside the approved proposals, including changes introduced by hooks or filters, block publication.
+
+Successful repository receipts are saved. If another repository or PR creation fails, correct that failure and retry the same publish command. It reuses the reviewed commit and existing PR. Worktrees remain available for inspection; saved drafts resumed against a newer base retain their previous isolated checkout rather than deleting outside work.
+
+## Connect through MCP
+
+The optional adapter uses the official MCP Python SDK over local stdio. It calls the same core as the CLI. The core CLI and Git delivery need no pip dependencies; the MCP adapter requires Python 3.10+.
+
+Install into a dedicated environment from the Ripple checkout:
+
+```bash
+python3.11 -m venv .venv-mcp
+.venv-mcp/bin/python -m pip install -r requirements-mcp.txt
+```
+
+Configure your MCP client to launch that Python interpreter with Ripple's source path and your project root. For clients using an `mcpServers` JSON configuration:
+
+```json
+{
+  "mcpServers": {
+    "ripple": {
+      "command": "/path/to/ripple/.venv-mcp/bin/python",
+      "args": [
+        "/path/to/ripple/ripple.py",
+        "--root", "/absolute/company/project",
+        "mcp"
+      ]
+    }
+  }
+}
+```
+
+Replace the paths with actual absolute paths. Use the client's stdio server configuration; no network endpoint or port is required. Nothing prints to stdout until the client speaks MCP.
+
+Agents can discover `ripple_status`, `ripple_start`, `ripple_inspect`, `ripple_assess`, `ripple_clarify`, `ripple_propose`, `ripple_check`, and `ripple_apply`. Proposal arguments have schemas for file edits and acceptance conditions. The server is bound to the project root supplied at startup.
+
+Human approval remains in the dashboard. Git publication is a reviewer action through the dashboard or CLI. Neither approval nor publication is exposed as an MCP agent tool. MCP does not add operating-system isolation or authenticate actor labels.
+
 ## Optional Switch coordination
 
 Configure your company agents in Switch with their actual working directories, providers, instructions, and addressing permissions. Keep their roster entries and workspace assignments consistent with `ripple.json`. Ripple's request and approval handoffs use that configuration.
@@ -146,7 +208,7 @@ Acceptance conditions support `contains`, `not_contains`, `json_equals`, and `cs
 
 Ripple can add or edit supported text files, including Python, JavaScript, TypeScript, Markdown, JSON, CSV, HTML, CSS, YAML, TOML, SQL, and shell files. Binary assets and file deletion are not supported. External SaaS connectors are not included. Hidden files and generated dependency/build directories are excluded from inspection. `ripple.json` is control configuration and cannot be edited through a workspace proposal.
 
-File replacements are atomic. A journal supports recovery of an interrupted area's uncommitted writes on the next CLI or dashboard operation. Completed areas remain applied. Conflicting outside edits stop recovery for reconciliation. The overall request is not a transaction across all workspaces. Preserve `.ripple/` when resolving an error.
+File replacements are atomic. A journal supports recovery of an interrupted area's uncommitted writes on the next CLI or dashboard operation. Completed areas remain applied. Conflicting outside edits stop recovery for reconciliation. The overall request is not a transaction across all workspaces. In Git mode, these writes and recovery happen in isolated worktrees. Preserve `.ripple/` when resolving an error.
 
 Agent roles are instructions, not operating-system isolation. The dashboard is intended for a trusted local user. State and dispatch credentials stay in ignored `.ripple/`. Restart the server after backend updates and refresh your browser.
 
@@ -159,7 +221,7 @@ node --check tests/browser.mjs
 node tests/ui_state.mjs
 ```
 
-The tests use isolated projects. They cover the included example, company-defined workspace names, different agent counts, shared responsibilities, approval boundaries, and process interruption recovery.
+The tests use isolated projects and actual temporary Git repositories. They cover the included example, company-defined workspace names, different agent counts, shared responsibilities, approval boundaries, process interruption recovery, and Git publication boundaries. Optional MCP protocol tests use the official client against a stdio subprocess; install `requirements-mcp.txt` with Python 3.10+ to run them. CI installs it and runs those tests explicitly.
 
 Optional browser verification requires Node and Playwright:
 
